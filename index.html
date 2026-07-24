@@ -1,0 +1,3119 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PocketFlow - 商業級個人財務記帳儀表板</title>
+    <meta name="description" content="PocketFlow - 現代化 SaaS 風格個人財務記帳與 AI 分析平台">
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind CSS with custom configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb', // Primary Blue
+                            700: '#1d4ed8',
+                        },
+                        darkBg: '#0F172A',      // Main Background
+                        darkCard: '#111827',    // Card Background
+                        darkBorder: '#1E293B',  // Subtle Border
+                    },
+                    boxShadow: {
+                        'glow-blue': '0 0 25px -5px rgba(37, 99, 235, 0.4)',
+                        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.4)',
+                        'glow-rose': '0 0 25px -5px rgba(239, 68, 68, 0.4)',
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2.5s infinite ease-in-out',
+                        'float': 'float 4s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(37, 99, 235, 0.4)' },
+                            '50%': { boxShadow: '0 0 30px rgba(37, 99, 235, 0.8)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Modern Pure Dark Glassmorphism & Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F172A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        
+        .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+        }
+
+        .glass-header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Gradient Text Effects */
+        .gradient-text-blue {
+            background: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Transition utility classes */
+        .hover-card-rise {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-card-rise:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Modal backdrop animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-modal-in {
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* ============================================================ */
+        /* 新增：登入畫面樣式 (Login Overlay Styles)                     */
+        /* ============================================================ */
+        .login-card-glass {
+            position: relative;
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+            animation: loginCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* 卡片頂部細緻的高光邊線 */
+        .login-card-glass::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 12%; right: 12%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.6), transparent);
+        }
+
+        @keyframes loginCardIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .login-input:focus {
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+        }
+
+        /* 登入按鈕 hover 光澤掃過效果 */
+        .login-submit-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .login-submit-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -60%;
+            width: 40%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease;
+        }
+        .login-submit-btn:hover::after {
+            left: 130%;
+        }
+
+        /* 登入失敗時的抖動動畫 */
+        .login-shake {
+            animation: loginShake 0.4s ease-in-out;
+        }
+
+        @keyframes loginShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
+
+        /* 登入成功後，整個登入畫面淡出 */
+        #login-overlay.login-fade-out {
+            animation: loginFadeOut 0.35s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes loginFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* 左側品牌面板：背景網格紋理 */
+        .login-grid-pattern {
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+            background-size: 36px 36px;
+            -webkit-mask-image: radial-gradient(ellipse at 30% 40%, black 40%, transparent 78%);
+            mask-image: radial-gradient(ellipse at 30% 40%, black 40%, transparent 78%);
+        }
+
+        /* 簽名視覺：「資金流動氣泡」— 呼應 PocketFlow 品牌，收支持續由下往上流動 */
+        .login-flow-stage {
+            pointer-events: none;
+        }
+
+        .login-bubble {
+            position: absolute;
+            bottom: -8%;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 14px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            white-space: nowrap;
+            opacity: 0;
+            animation: bubbleFlow 13s linear infinite;
+        }
+
+        .login-bubble--in {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34D399;
+        }
+
+        .login-bubble--out {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #FB7185;
+        }
+
+        @keyframes bubbleFlow {
+            0%   { transform: translateY(0) translateX(0); opacity: 0; }
+            8%   { opacity: 1; }
+            50%  { transform: translateY(-260px) translateX(10px); }
+            92%  { opacity: 1; }
+            100% { transform: translateY(-540px) translateX(-8px); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-100 font-sans min-h-screen antialiased selection:bg-brand-600 selection:text-white">
+
+    <!-- ============================================================ -->
+    <!-- 新增：使用者登入畫面 (Login Overlay) -->
+    <!-- 蓋在整個畫面最上層，登入成功或偵測到「記住我」後會淡出隱藏 -->
+    <!-- ============================================================ -->
+    <div id="login-overlay" class="fixed inset-0 z-[9999] grid lg:grid-cols-2 bg-darkBg overflow-hidden">
+
+        <!-- 左側：品牌敘事 + 「資金流動氣泡」簽名視覺動畫 (僅桌面顯示) -->
+        <div class="hidden lg:flex relative flex-col justify-between p-12 xl:p-16 overflow-hidden border-r border-white/5 bg-gradient-to-br from-slate-950 via-darkBg to-slate-900">
+            <!-- 背景網格紋理 -->
+            <div class="absolute inset-0 login-grid-pattern"></div>
+
+            <!-- Flow 浮動氣泡群：呼應「PocketFlow」品牌名稱，代表收支持續流動 -->
+            <div class="absolute inset-0 login-flow-stage" aria-hidden="true">
+                <span class="login-bubble login-bubble--in" style="left:8%; animation-delay:0s;"><i class="fa-solid fa-sack-dollar"></i>+NT$ 45,000</span>
+                <span class="login-bubble login-bubble--out" style="left:24%; animation-delay:2.4s;"><i class="fa-solid fa-bag-shopping"></i>-NT$ 680</span>
+                <span class="login-bubble login-bubble--in" style="left:42%; animation-delay:4.8s;"><i class="fa-solid fa-utensils"></i>+NT$ 1,240</span>
+                <span class="login-bubble login-bubble--out" style="left:60%; animation-delay:1.2s;"><i class="fa-solid fa-house"></i>-NT$ 2,100</span>
+                <span class="login-bubble login-bubble--out" style="left:76%; animation-delay:6s;"><i class="fa-solid fa-mug-hot"></i>-NT$ 150</span>
+                <span class="login-bubble login-bubble--in" style="left:90%; animation-delay:3.6s;"><i class="fa-solid fa-chart-line"></i>+NT$ 890</span>
+                <span class="login-bubble login-bubble--out" style="left:15%; animation-delay:8.4s;"><i class="fa-solid fa-bus"></i>-NT$ 320</span>
+                <span class="login-bubble login-bubble--in" style="left:68%; animation-delay:9.6s;"><i class="fa-solid fa-gift"></i>+NT$ 3,000</span>
+            </div>
+
+            <!-- Logo / Wordmark -->
+            <div class="relative z-10 flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-blue-400 flex items-center justify-center shadow-glow-blue text-white text-lg font-extrabold">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <span class="text-lg font-bold tracking-tight text-white">Pocket<span class="text-brand-500">Flow</span></span>
+            </div>
+
+            <!-- 品牌標語 -->
+            <div class="relative z-10 max-w-sm">
+                <h2 class="text-3xl xl:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                    讓每一筆錢<br>都看得見<span class="text-brand-500">去向</span>。
+                </h2>
+                <p class="mt-4 text-sm text-slate-400 leading-relaxed">
+                    PocketFlow 即時追蹤你的收支動態，用視覺化圖表看懂自己的財務健康狀態。
+                </p>
+            </div>
+
+            <!-- 底部安全提示 -->
+            <div class="relative z-10 flex items-center gap-2 text-[11px] text-slate-500">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                資料經加密驗證，僅登入帳號本人可存取
+            </div>
+        </div>
+
+        <!-- 右側：登入表單卡片 -->
+        <div class="relative flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+            <!-- 手機版背景光暈 (桌面版由左側品牌面板取代) -->
+            <div class="absolute inset-0 lg:hidden bg-gradient-to-br from-darkBg via-slate-950 to-slate-900"></div>
+            <div class="absolute -top-32 -left-32 w-96 h-96 bg-brand-600/20 rounded-full blur-3xl animate-float lg:hidden"></div>
+            <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-float lg:hidden" style="animation-delay:1s"></div>
+
+            <div id="login-card" class="relative w-full max-w-sm login-card-glass p-8 sm:p-10">
+                <!-- Logo (手機版顯示；桌面版已顯示於左側面板) -->
+                <div class="flex flex-col items-center mb-8 lg:hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-blue-400 flex items-center justify-center shadow-glow-blue text-white text-2xl font-extrabold mb-4">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-white tracking-tight">Pocket<span class="text-brand-500">Flow</span></h1>
+                </div>
+
+                <!-- ===== 視圖 1：登入表單 ===== -->
+                <div id="auth-login-view">
+                    <div class="mb-7">
+                        <p class="text-xs font-semibold text-brand-400 tracking-wide uppercase mb-1.5">歡迎回來</p>
+                        <h2 class="text-2xl font-bold text-white tracking-tight">登入你的帳戶</h2>
+                    </div>
+
+                    <form id="login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">帳號</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                <input type="text" id="login-username" autocomplete="username"
+                                    class="w-full pl-11 pr-4 py-3 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all login-input"
+                                    placeholder="請輸入帳號">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">密碼</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                <input type="password" id="login-password" autocomplete="current-password"
+                                    class="w-full pl-11 pr-11 py-3 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all login-input"
+                                    placeholder="請輸入密碼">
+                                <button type="button" onclick="togglePasswordVisibility('login-password', 'login-toggle-pw-icon')" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
+                                    <i class="fa-regular fa-eye text-sm" id="login-toggle-pw-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" id="login-remember-me" class="w-3.5 h-3.5 rounded accent-brand-600 cursor-pointer">
+                                <span class="text-xs text-slate-400">記住我</span>
+                            </label>
+                            <button type="button" onclick="showToast('請聯絡系統管理員以重設密碼', 'info')" class="text-xs text-brand-400 hover:text-brand-300 transition font-medium">
+                                忘記密碼？
+                            </button>
+                        </div>
+
+                        <div id="login-error-box" class="hidden px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium"></div>
+
+                        <button type="submit" id="login-submit-btn"
+                            class="login-submit-btn w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-glow-blue transition-all flex items-center justify-center gap-2 mt-2">
+                            <span id="login-submit-text">登入</span>
+                            <i class="fa-solid fa-spinner fa-spin hidden" id="login-submit-spinner"></i>
+                        </button>
+
+                        <div class="flex items-center gap-3 py-1">
+                            <span class="flex-1 h-px bg-slate-800"></span>
+                            <span class="text-[10px] text-slate-600 font-medium">或</span>
+                            <span class="flex-1 h-px bg-slate-800"></span>
+                        </div>
+
+                        <div class="text-center">
+                            <span class="text-xs text-slate-400">還沒有帳號？</span>
+                            <button type="button" onclick="switchAuthMode('register')" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold ml-1.5 transition">
+                                立即免費註冊 →
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ===== 視圖 2：註冊表單 ===== -->
+                <div id="auth-register-view" class="hidden">
+                    <div class="mb-7">
+                        <p class="text-xs font-semibold text-emerald-400 tracking-wide uppercase mb-1.5">加入 POCKETFLOW</p>
+                        <h2 class="text-2xl font-bold text-white tracking-tight">建立新帳戶</h2>
+                    </div>
+
+                    <form id="register-form" onsubmit="handleRegisterSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">帳號</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                <input type="text" id="register-username" autocomplete="username"
+                                    class="w-full pl-11 pr-4 py-3 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all login-input"
+                                    placeholder="至少 3 個字元">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">密碼</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                <input type="password" id="register-password" autocomplete="new-password"
+                                    class="w-full pl-11 pr-11 py-3 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all login-input"
+                                    placeholder="至少 6 個字元">
+                                <button type="button" onclick="togglePasswordVisibility('register-password', 'reg-pw-icon')" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
+                                    <i class="fa-regular fa-eye text-sm" id="reg-pw-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">確認密碼</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-shield-halved absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                <input type="password" id="register-confirm-password" autocomplete="new-password"
+                                    class="w-full pl-11 pr-11 py-3 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all login-input"
+                                    placeholder="再次輸入密碼">
+                                <button type="button" onclick="togglePasswordVisibility('register-confirm-password', 'reg-cpw-icon')" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
+                                    <i class="fa-regular fa-eye text-sm" id="reg-cpw-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="register-error-box" class="hidden px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium"></div>
+
+                        <button type="submit" id="register-submit-btn"
+                            class="login-submit-btn w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 mt-2">
+                            <span id="register-submit-text">建立帳號</span>
+                            <i class="fa-solid fa-spinner fa-spin hidden" id="register-submit-spinner"></i>
+                        </button>
+
+                        <div class="flex items-center gap-3 py-1">
+                            <span class="flex-1 h-px bg-slate-800"></span>
+                            <span class="text-[10px] text-slate-600 font-medium">或</span>
+                            <span class="flex-1 h-px bg-slate-800"></span>
+                        </div>
+
+                        <div class="text-center">
+                            <span class="text-xs text-slate-400">已有帳號？</span>
+                            <button type="button" onclick="switchAuthMode('login')" class="text-xs text-brand-400 hover:text-brand-300 font-bold ml-1.5 transition">
+                                ← 返回登入
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- ===== 登入畫面結束 ===== -->
+
+    <!-- 新增：防閃爍檢查 (Anti-Flash Check) -->
+    <!-- 這段 script 會在瀏覽器解析到這裡時立刻同步執行(不用等整頁載入完成)， -->
+    <!-- 如果偵測到「記住我」的登入紀錄，馬上隱藏登入畫面，避免畫面先閃一下登入頁才切回主畫面 -->
+    <script>
+        (function() {
+            try {
+                var remembered = localStorage.getItem('pocketflow_logged_in_user');
+                if (remembered) {
+                    var overlay = document.getElementById('login-overlay');
+                    if (overlay) overlay.style.display = 'none';
+                }
+            } catch (e) { /* localStorage 無法使用時忽略，正常顯示登入畫面即可 */ }
+        })();
+    </script>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- SIDEBAR (Desktop Fixed Left & Mobile Drawer) -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-darkCard/90 border-r border-slate-800/80 backdrop-blur-xl transform -translate-x-full lg:translate-x-0 lg:static lg:inset-auto transition-transform duration-300 ease-in-out flex flex-col justify-between">
+            <div>
+                <!-- Brand Logo Header -->
+                <div class="h-20 flex items-center px-6 border-b border-slate-800/60">
+                    <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('dashboard')">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-blue-400 flex items-center justify-center shadow-glow-blue text-white text-xl font-extrabold">
+                            <i class="fa-solid font-bold fa-bolt"></i>
+                        </div>
+                        <div>
+                            <span class="text-xl font-bold tracking-tight text-white">Pocket<span class="text-brand-500">Flow</span></span>
+                            <span class="block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Dark Edition</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Menu -->
+                <nav class="p-4 space-y-1.5">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-white bg-brand-600/90 shadow-glow-blue transition-all">
+                        <i class="fa-solid fa-chart-pie w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
+                        Dashboard (儀表板)
+                    </button>
+                    
+                    <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-item flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all">
+                        <i class="fa-solid fa-receipt w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
+                        Transactions (交易紀錄)
+                    </button>
+                    
+                    <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-item flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all">
+                        <i class="fa-solid fa-chart-line w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
+                        Analytics (數據分析)
+                    </button>
+
+                    <button onclick="switchTab('budgets')" id="nav-budgets" class="nav-item flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all">
+                        <i class="fa-solid fa-wallet w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
+                        Budgets (預算控制)
+                    </button>
+
+                    <button onclick="switchTab('goals')" id="nav-goals" class="nav-item flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all">
+                        <i class="fa-solid fa-bullseye w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
+                        Goals (儲蓄目標)
+                    </button>
+
+                    <button onclick="switchTab('settings')" id="nav-settings" class="nav-item flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all">
+                        <i class="fa-solid fa-gear w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
+                        Settings (系統設定)
+                    </button>
+                </nav>
+            </div>
+
+            <!-- DYNAMIC SIDEBAR BOTTOM STATUS CARD -->
+            <div class="p-4 m-4 glass-card border border-slate-700/50 rounded-[20px] bg-gradient-to-b from-slate-900/80 to-slate-950/80">
+                <div class="flex items-center justify-between mb-2">
+                    <span id="sidebar-status-badge" class="px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide uppercase bg-brand-500/20 text-brand-400 rounded-full border border-brand-500/30">系統就緒</span>
+                    <i class="fa-solid fa-database text-brand-400 text-xs"></i>
+                </div>
+                <p id="sidebar-status-desc" class="text-xs font-medium text-slate-300 mb-3">已記錄 0 筆交易明細</p>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div id="storage-bar" class="bg-gradient-to-r from-brand-500 to-emerald-400 h-full w-[0%] rounded-full transition-all duration-300"></div>
+                </div>
+                <span id="sidebar-storage-text" class="text-[10px] text-slate-400 mt-1.5 block">本地容量：0% 已使用</span>
+            </div>
+        </aside>
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-950/60 z-20 hidden lg:hidden backdrop-blur-sm"></div>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-darkBg">
+            
+            <!-- TOP BAR / HEADER -->
+            <header class="h-20 sticky top-0 z-10 glass-header border-b border-slate-800/60 px-4 sm:px-8 flex items-center justify-between">
+                <!-- Mobile Hamburger & Search -->
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    
+                    <!-- Search Bar -->
+                    <div class="relative hidden sm:block w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="global-search" onkeyup="handleSearch(this.value)" placeholder="搜尋交易紀錄、商家或金額..." class="w-full pl-10 pr-4 py-2.5 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                    </div>
+                </div>
+
+                <!-- Right Header Actions -->
+                <div class="flex items-center gap-3 sm:gap-4">
+
+                    <!-- Fixed Dark Theme Badge Indicator -->
+                    <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs font-semibold text-slate-300">
+                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                        <span>純粹深色模式</span>
+                    </div>
+
+                    <!-- FIXED NOTIFICATIONS DROPDOWN WRAPPER -->
+                    <div class="relative" id="notif-wrapper">
+                        <button onclick="toggleNotificationDropdown(event)" id="notif-bell-btn" class="relative p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition">
+                            <i class="fa-regular fa-bell text-base"></i>
+                            <span id="notif-badge" class="hidden absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-brand-500 ring-4 ring-darkBg"></span>
+                        </button>
+                        
+                        <!-- Notification Popover Menu -->
+                        <div id="notif-dropdown" class="hidden absolute right-0 mt-3 w-80 glass-card p-4 shadow-2xl z-50 border border-slate-800 animate-modal-in">
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                                <span class="text-sm font-bold text-white">系統通知</span>
+                                <button type="button" class="text-[11px] font-semibold text-brand-400 hover:text-brand-300 transition cursor-pointer" onclick="clearNotifs(event)">標為已讀</button>
+                            </div>
+                            <div id="notif-list" class="py-2 space-y-2 max-h-64 overflow-y-auto">
+                                <div class="text-center py-6 text-slate-500 text-xs">
+                                    <i class="fa-solid fa-bell-slash text-base mb-1 block"></i>
+                                    目前無新通知
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Profile Avatar & Name (Default: User) -->
+                    <div class="flex items-center gap-3 pl-2 border-l border-slate-800">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-md" id="header-avatar-badge">
+                            U
+                        </div>
+                        <div class="hidden sm:block text-left">
+                            <h4 class="text-sm font-bold text-white leading-tight" id="header-user-name">User</h4>
+                            <span class="text-[11px] font-medium text-slate-400">VIP Member</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DASHBOARD CONTAINER BODY -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8">
+
+                <!-- VIEW 1: DASHBOARD TAB CONTENT -->
+                <div id="view-dashboard" class="space-y-8">
+
+                    <!-- TOP HERO / GREETING BAR -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                                歡迎回來, <span class="gradient-text-blue" id="dash-greeting-name">User</span> 👋
+                            </h1>
+                            <p class="text-sm text-slate-400 mt-1">極致深色模式個人記帳與 AI 財務分析系統</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="openModal()" class="px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm shadow-glow-blue transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-plus text-xs"></i> 新增交易明細
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3 OVERVIEW METRIC CARDS -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="glass-card p-6 hover-card-rise relative overflow-hidden group">
+                            <div class="absolute -right-6 -top-6 w-32 h-32 bg-brand-600/15 rounded-full blur-2xl group-hover:bg-brand-600/25 transition-all"></div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm font-semibold text-slate-400">目前總餘額</span>
+                                <div class="w-11 h-11 rounded-2xl bg-brand-600/20 text-brand-400 flex items-center justify-center text-lg border border-brand-500/30">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline justify-between">
+                                <div><span class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight" id="stat-balance">NT$ 0</span></div>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-800/40 px-3 py-1.5 rounded-xl w-max border border-slate-700/50" id="stat-balance-desc-box">
+                                <i class="fa-solid fa-circle-info" id="stat-balance-icon"></i>
+                                <span id="stat-balance-desc">尚無收支紀錄</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 hover-card-rise relative overflow-hidden group">
+                            <div class="absolute -right-6 -top-6 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl group-hover:bg-emerald-500/25 transition-all"></div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm font-semibold text-slate-400">本月總收入</span>
+                                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg border border-emerald-500/30">
+                                    <i class="fa-solid fa-arrow-down-left"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline justify-between">
+                                <div><span class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight" id="stat-income">NT$ 0</span></div>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-800/40 px-3 py-1.5 rounded-xl w-max border border-slate-700/50" id="stat-income-desc-box">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span id="stat-income-desc">尚未有收入紀錄</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 hover-card-rise relative overflow-hidden group">
+                            <div class="absolute -right-6 -top-6 w-32 h-32 bg-rose-500/15 rounded-full blur-2xl group-hover:bg-rose-500/25 transition-all"></div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm font-semibold text-slate-400">本月總支出</span>
+                                <div class="w-11 h-11 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg border border-rose-500/30">
+                                    <i class="fa-solid fa-arrow-up-right"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline justify-between">
+                                <div><span class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight" id="stat-expense">NT$ 0</span></div>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-800/40 px-3 py-1.5 rounded-xl w-max border border-slate-700/50" id="stat-expense-desc-box">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span id="stat-expense-desc">尚未有支出紀錄</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CHARTS SECTION: UPGRADED TO EXCEL STYLE COMBO CHART -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Left 2 Cols: Excel Style Combo Chart -->
+                        <div class="lg:col-span-2 glass-card p-6 hover-card-rise flex flex-col justify-between">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white flex items-center gap-2" id="combo-chart-title">
+                                        <i class="fa-solid fa-chart-line text-brand-400"></i> 預算及存款支出統計
+                                    </h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">雙 Y 軸 • 1-7月實績 (實線) vs 8-12月預測 (虛線)</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 text-[10px] font-semibold text-slate-300 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-800">
+                                    <span class="inline-block w-2.5 h-2.5 bg-blue-500 rounded-sm"></span> 實際存款
+                                    <span class="inline-block w-2.5 h-2.5 bg-orange-500 rounded-sm"></span> 實際支出
+                                    <span class="inline-block w-2.5 h-2.5 bg-slate-400/50 rounded-sm"></span> 存款餘額
+                                    <span class="inline-block w-3 h-0.5 bg-amber-400"></span> 年度預支
+                                    <span class="inline-block w-3 h-0.5 bg-emerald-500"></span> 累積存款
+                                </div>
+                            </div>
+                            <div class="relative w-full h-80">
+                                <canvas id="comboChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Right 1 Col: Category Breakdown Doughnut -->
+                        <div class="glass-card p-6 hover-card-rise flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                        <i class="fa-solid fa-chart-pie text-purple-400"></i> 支出分類占比 (食衣住行育樂)
+                                    </h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">本月份食衣住行育樂消費分布</p>
+                                </div>
+                            </div>
+                            <div class="relative w-full h-52 flex items-center justify-center">
+                                <canvas id="doughnutChart"></canvas>
+                            </div>
+                            <div id="category-legend-list" class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-800/80"></div>
+                        </div>
+                    </div>
+
+                    <!-- RECENT TRANSACTIONS + AI ADVISOR & GOALS -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 glass-card p-6 hover-card-rise">
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                        <i class="fa-solid fa-list-check text-brand-400"></i> 最近交易紀錄
+                                    </h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">即時列出最新帳目內容</p>
+                                </div>
+                                <button onclick="switchTab('transactions')" class="text-xs font-semibold text-brand-400 hover:text-brand-300 transition flex items-center gap-1">
+                                    查看全部 <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                </button>
+                            </div>
+                            <div id="recent-transactions-list" class="space-y-3"></div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- SAVINGS GOAL CARD -->
+                            <div class="glass-card p-6 hover-card-rise relative overflow-hidden">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm">
+                                            <i class="fa-solid fa-piggy-bank"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-white" id="goal-title-display">個人儲蓄目標</h4>
+                                            <span class="text-[11px] text-slate-400" id="goal-target-display">目標 NT$ 20,000</span>
+                                        </div>
+                                    </div>
+                                    <span id="goal-percent-badge" class="px-2.5 py-1 text-xs font-extrabold bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30">0%</span>
+                                </div>
+
+                                <div class="my-4">
+                                    <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                        <span class="text-slate-400">已儲蓄</span>
+                                        <span class="text-purple-300 font-bold" id="goal-saved-text">NT$ 0</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                                        <div id="goal-progress-bar" class="bg-gradient-to-r from-purple-500 to-brand-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="openGoalDepositModal()" class="py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition shadow-md flex items-center justify-center gap-1.5">
+                                        <i class="fa-solid fa-plus"></i> 存入金額
+                                    </button>
+                                    <button onclick="openEditGoalModal()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition flex items-center justify-center gap-1.5 border border-slate-700/50">
+                                        <i class="fa-solid fa-pen-to-square"></i> 設定目標
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- AI Assistant Card -->
+                            <div class="glass-card p-6 hover-card-rise border-l-4 border-brand-500 relative bg-gradient-to-br from-slate-900/90 to-brand-950/20">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white text-xs shadow-glow-blue">
+                                        <i class="fa-solid fa-robot animate-pulse"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-white">AI 財務助理</h4>
+                                        <span class="text-[10px] text-brand-400 font-semibold">智慧消費分析與省錢提案</span>
+                                    </div>
+                                </div>
+
+                                <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800/80 text-xs text-slate-300 leading-relaxed" id="ai-advice-text">
+                                    「歡迎使用 PocketFlow！當你開始輸入記帳明細後，AI 財務助理會自動分析你的消費趨勢並提供省錢建議。」
+                                </div>
+
+                                <div class="mt-3 flex items-center justify-between">
+                                    <button onclick="generateFreshAIAdvice()" class="text-[11px] font-semibold text-brand-400 hover:text-brand-300 transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> 重新計算分析
+                                    </button>
+                                    <span class="text-[10px] text-slate-500">已就緒</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- VIEW 2: TRANSACTIONS LIST -->
+                <div id="view-transactions" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">交易明細總覽</h2>
+                            <p class="text-xs text-slate-400">管理與搜尋你所有的收支紀錄</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <select id="filter-category" onchange="applyFilters()" class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none">
+                                <option value="ALL">全部分類</option>
+                                <option value="食">🍚 食</option>
+                                <option value="衣">👕 衣</option>
+                                <option value="住">🏠 住</option>
+                                <option value="行">🚇 行</option>
+                                <option value="育">📚 育</option>
+                                <option value="樂">🎬 樂</option>
+                                <option value="其他">📦 其他支出</option>
+                                <option value="INCOME">💰 全部分類 (收入)</option>
+                            </select>
+                            <button onclick="openModal()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold text-xs shadow-glow-blue">
+                                <i class="fa-solid fa-plus mr-1"></i> 新增明細
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6">
+                        <div id="full-transactions-list" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: ANALYTICS TAB -->
+                <div id="view-analytics" class="hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">進階數據分析</h2>
+                            <p class="text-xs text-slate-400">深度分析你的消費軌跡、財務健康度與收支比例</p>
+                        </div>
+                        <span class="px-3 py-1 text-xs font-bold bg-brand-500/20 text-brand-400 rounded-full border border-brand-500/30 flex items-center gap-1.5">
+                            <i class="fa-solid fa-chart-pie"></i> 動態分析引擎
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="glass-card p-5 hover-card-rise">
+                            <span class="text-xs text-slate-400 block mb-1">日均消費金額</span>
+                            <span class="text-2xl font-extrabold text-white" id="analytics-daily-avg">NT$ 0</span>
+                            <span class="text-[10px] text-slate-500 block mt-2">根據本月天數即時平均</span>
+                        </div>
+                        <div class="glass-card p-5 hover-card-rise">
+                            <span class="text-xs text-slate-400 block mb-1">最高單筆支出</span>
+                            <span class="text-2xl font-extrabold text-rose-400" id="analytics-max-exp">NT$ 0</span>
+                            <span class="text-[10px] text-slate-500 block mt-2" id="analytics-max-exp-title">無單筆支出</span>
+                        </div>
+                        <div class="glass-card p-5 hover-card-rise">
+                            <span class="text-xs text-slate-400 block mb-1">本月儲蓄率</span>
+                            <span class="text-2xl font-extrabold text-emerald-400" id="analytics-savings-rate">0.0%</span>
+                            <span class="text-[10px] text-slate-500 block mt-2">結餘 / 總收入</span>
+                        </div>
+                        <div class="glass-card p-5 hover-card-rise">
+                            <span class="text-xs text-slate-400 block mb-1">財務健康評估</span>
+                            <span class="text-2xl font-extrabold text-brand-400" id="analytics-health-score">100 分</span>
+                            <span class="text-[10px] text-slate-500 block mt-2" id="analytics-health-desc">財務狀況極佳</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="glass-card p-6 hover-card-rise flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-column text-emerald-400"></i> 收入 vs 支出對比柱狀圖
+                                </h3>
+                            </div>
+                            <div class="relative w-full h-64">
+                                <canvas id="analyticsBarChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 hover-card-rise flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-pie text-purple-400"></i> 食衣住行育樂 分類支出金額長條圖
+                                </h3>
+                            </div>
+                            <div class="relative w-full h-64">
+                                <canvas id="analyticsCategoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: BUDGETS TAB (UPGRADED WITH INCOME & EXPENSE BUDGET CONTROL) -->
+                <div id="view-budgets" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">預算與收入目標控制中心</h2>
+                            <p class="text-xs text-slate-400">自訂食衣住行育樂支出預算上限與收入目標，並即時與記帳選單連動</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openAddCategoryModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus text-xs"></i> 新增預算分類
+                            </button>
+                            <button onclick="openEditBudgetsModal()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-glow-blue transition flex items-center gap-2">
+                                <i class="fa-solid fa-sliders"></i> 設定預算數值
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div class="glass-card p-5 hover-card-rise">
+                            <span class="text-xs text-slate-400 block mb-1">月度總支出預算上限</span>
+                            <span class="text-2xl font-extrabold text-white" id="budget-total-limit">NT$ 33,000</span>
+                        </div>
+                        <div class="glass-card p-5 hover-card-rise">
+                            <span class="text-xs text-slate-400 block mb-1">已使用支出預算</span>
+                            <span class="text-2xl font-extrabold text-brand-400" id="budget-total-used">NT$ 0</span>
+                        </div>
+                        <div class="glass-card p-5 hover-card-rise">
+                            <span class="text-xs text-slate-400 block mb-1">月度預估總收入目標</span>
+                            <span class="text-2xl font-extrabold text-emerald-400" id="budget-income-target">NT$ 55,000</span>
+                        </div>
+                    </div>
+
+                    <!-- EXPENSE BUDGETS: 食衣住行育樂 -->
+                    <div class="glass-card p-6 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-list-progress text-rose-400"></i> 支出預算進度 (食、衣、住、行、育、樂...)
+                            </h3>
+                            <span class="text-xs text-slate-400">即時計算實時消費占比</span>
+                        </div>
+                        <div id="category-budget-list" class="space-y-4"></div>
+                    </div>
+
+                    <!-- INCOME BUDGET TARGETS -->
+                    <div class="glass-card p-6 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-coins text-emerald-400"></i> 收入目標進度 (薪資、投資、副業...)
+                            </h3>
+                            <span class="text-xs text-slate-400">追蹤各收入管道達成率</span>
+                        </div>
+                        <div id="income-budget-list" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: GOALS TAB -->
+                <div id="view-goals" class="hidden space-y-6">
+                    <div class="glass-card p-6">
+                        <h2 class="text-xl font-bold text-white mb-2">儲蓄目標中心</h2>
+                        <p class="text-xs text-slate-400 mb-6">設定個人理財目標並追蹤存錢進度</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-sm font-bold text-white" id="goal-tab-name">🎯 個人儲蓄目標</span>
+                                    <span class="text-xs font-bold text-purple-400" id="goal-tab-text">NT$ 0 / NT$ 20,000</span>
+                                </div>
+                                <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden mb-4">
+                                    <div id="goal-tab-progress" class="bg-gradient-to-r from-purple-500 to-brand-500 h-full rounded-full transition-all" style="width: 0%"></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="openGoalDepositModal()" class="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold">
+                                        存入金額
+                                    </button>
+                                    <button onclick="openEditGoalModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700/50">
+                                        修改目標
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 6: FULLY UPGRADED SETTINGS TAB -->
+                <div id="view-settings" class="hidden space-y-6">
+                    <div class="glass-card p-6 sm:p-8 space-y-8 max-w-2xl">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">系統與帳號設定</h2>
+                            <p class="text-xs text-slate-400">管理偏好貨幣、使用者暱稱與數據備份</p>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- 1. Username Preference (Default User) -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">使用者暱稱</p>
+                                    <span class="text-xs text-slate-400">自訂顯示於頁面頂部的個人名稱</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="setting-username-input" class="px-3.5 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-brand-500 w-36 sm:w-44">
+                                    <button onclick="saveUsernameSetting()" class="px-3.5 py-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-glow-blue transition">
+                                        儲存
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 2. Currency Preference Selection -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">預設顯示貨幣</p>
+                                    <span class="text-xs text-slate-400">切換全站金額計價符號</span>
+                                </div>
+                                <select id="setting-currency-select" onchange="saveCurrencySetting(this.value)" class="px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none">
+                                    <option value="NT$">新台幣 (NT$)</option>
+                                    <option value="$">美元 ($)</option>
+                                    <option value="¥">日圓 (¥)</option>
+                                    <option value="€">歐元 (€)</option>
+                                </select>
+                            </div>
+
+                            <!-- 3. Data Backup (Export & Import JSON) -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">資料備份與匯入</p>
+                                    <span class="text-xs text-slate-400">匯出 JSON 備份檔或讀取歷史備份回復</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="exportDataJSON()" class="px-3.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700/50 transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-download"></i> 匯出 JSON
+                                    </button>
+                                    <label class="px-3.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700/50 transition cursor-pointer flex items-center gap-1.5">
+                                        <i class="fa-solid fa-upload"></i> 匯入 JSON
+                                        <input type="file" id="import-json-file" accept=".json" onchange="importDataJSON(event)" class="hidden">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 4. Destructive Action: Clean Data with Confirmation Modal Trigger -->
+                            <div class="flex items-center justify-between pt-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-rose-400">完全清空所有記帳資料</p>
+                                    <span class="text-xs text-slate-400">清空本地 LocalStorage 紀錄、預算與儲蓄目標</span>
+                                </div>
+                                <button onclick="openConfirmResetModal()" class="px-4 py-2 text-xs font-bold bg-rose-500/20 text-rose-400 rounded-xl hover:bg-rose-500/30 transition border border-rose-500/30">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> 清空資料
+                                </button>
+                            </div>
+
+                            <!-- 5. 新增：登入帳號狀態與登出 -->
+                            <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">登入帳號</p>
+                                    <span class="text-xs text-slate-400">目前登入帳號：<span id="setting-login-account-display" class="text-brand-400 font-semibold">-</span></span>
+                                </div>
+                                <button onclick="handleLogout()" class="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700/50 transition flex items-center gap-2">
+                                    <i class="fa-solid fa-right-from-bracket"></i> 登出
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- FLOATING ACTION BUTTON FOR QUICK TRANSACTION -->
+    <button onclick="openModal()" title="快速記帳" class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-brand-600 to-blue-400 text-white flex items-center justify-center text-xl shadow-glow-blue hover:scale-110 active:scale-95 transition-all duration-300 group">
+        <i class="fa-solid fa-plus group-hover:rotate-90 transition-transform duration-300"></i>
+    </button>
+
+    <!-- MODAL 1: QUICK ADD TRANSACTION -->
+    <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-700/80 animate-modal-in relative">
+            <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-800">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-brand-500"></i> 新增交易明細
+                </h3>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 p-1.5 bg-slate-900/90 rounded-2xl border border-slate-800 mb-6">
+                <button type="button" id="btn-type-expense" onclick="setTransactionType('EXPENSE')" class="py-2.5 text-xs font-bold rounded-xl bg-rose-600 text-white shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-up-right"></i> 支出 (Expense)
+                </button>
+                <button type="button" id="btn-type-income" onclick="setTransactionType('INCOME')" class="py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-down-left"></i> 收入 (Income)
+                </button>
+            </div>
+
+            <form id="transaction-form" onsubmit="saveTransaction(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">金額 (<span class="currency-symbol">NT$</span>)</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg currency-symbol">NT$</span>
+                        <input type="number" id="input-amount" step="1" required placeholder="0" class="w-full pl-14 pr-4 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-xl font-bold text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" onclick="addAmount(100)" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg">+100</button>
+                        <button type="button" onclick="addAmount(500)" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg">+500</button>
+                        <button type="button" onclick="addAmount(1000)" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-lg">+1,000</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">分類 (與預算設定同步)</label>
+                        <select id="input-category" class="w-full px-3.5 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">日期</label>
+                        <input type="date" id="input-date" required class="w-full px-3.5 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">商家 / 備註內容</label>
+                    <input type="text" id="input-title" required placeholder="例如：晚餐、月薪、買衣服..." class="w-full px-4 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500">
+                </div>
+
+                <button type="submit" class="w-full py-3.5 mt-2 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-glow-blue transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> 儲存交易紀錄
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: GOAL DEPOSIT MODAL -->
+    <div id="goal-deposit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card w-full max-w-md p-6 shadow-2xl border border-slate-700/80 animate-modal-in relative">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-piggy-bank text-purple-400"></i> 存入儲蓄金額
+                </h3>
+                <button onclick="closeGoalDepositModal()" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleDepositSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">存入金額 (<span class="currency-symbol">NT$</span>)</label>
+                    <input type="number" id="deposit-amount-input" required min="1" step="1" value="500" placeholder="請輸入金額" class="w-full px-4 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-lg font-bold text-white focus:outline-none focus:border-purple-500">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="setDepositValue(100)" class="flex-1 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl">+100</button>
+                    <button type="button" onclick="setDepositValue(500)" class="flex-1 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl">+500</button>
+                    <button type="button" onclick="setDepositValue(1000)" class="flex-1 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl">+1,000</button>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all">
+                    確認存入
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: EDIT GOAL MODAL -->
+    <div id="goal-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card w-full max-w-md p-6 shadow-2xl border border-slate-700/80 animate-modal-in relative">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-brand-400"></i> 修改儲蓄目標設定
+                </h3>
+                <button onclick="closeEditGoalModal()" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleEditGoalSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">目標名稱</label>
+                    <input type="text" id="goal-title-input" required placeholder="如：個人儲蓄目標、新手機基金" class="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">目標總金額 (<span class="currency-symbol">NT$</span>)</label>
+                    <input type="number" id="goal-target-input" required min="100" step="100" placeholder="20000" class="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <button type="submit" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-glow-blue transition-all">
+                    儲存目標設定
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: EDIT BUDGETS MODAL (DYNAMIC CATEGORIES) -->
+    <div id="budget-edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card w-full max-w-lg p-6 shadow-2xl border border-slate-700/80 animate-modal-in relative max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-brand-400"></i> 設定預算與收入目標金額
+                </h3>
+                <button onclick="closeEditBudgetsModal()" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleEditBudgetsSubmit(event)" class="space-y-4 overflow-y-auto pr-1">
+                <div>
+                    <h4 class="text-xs font-bold text-rose-400 mb-2 border-b border-slate-800 pb-1">💸 支出預算上限 (食衣住行育樂...)</h4>
+                    <div id="edit-expense-budgets-inputs" class="space-y-2.5"></div>
+                </div>
+
+                <div class="pt-2">
+                    <h4 class="text-xs font-bold text-emerald-400 mb-2 border-b border-slate-800 pb-1">💰 預估收入目標 (薪資、投資...)</h4>
+                    <div id="edit-income-budgets-inputs" class="space-y-2.5"></div>
+                </div>
+
+                <button type="submit" class="w-full py-3 mt-2 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-glow-blue transition-all">
+                    儲存預算與收入設定
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: ADD NEW CUSTOM CATEGORY MODAL -->
+    <div id="add-category-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card w-full max-w-md p-6 shadow-2xl border border-slate-700/80 animate-modal-in relative">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-folder-plus text-brand-400"></i> 新增預算/收入分類
+                </h3>
+                <button onclick="closeAddCategoryModal()" class="w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleAddCategorySubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">分類類型</label>
+                    <select id="new-cat-type" class="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-brand-500">
+                        <option value="EXPENSE">💸 支出預算分類 (如：寵物、醫療...)</option>
+                        <option value="INCOME">💰 收入目標分類 (如：副業、獎金...)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">分類名稱</label>
+                    <input type="text" id="new-cat-name" required placeholder="如：寵物、醫療、兼職" class="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">預設月金額 (<span class="currency-symbol">NT$</span>)</label>
+                    <input type="number" id="new-cat-limit" required min="0" step="100" value="3000" class="w-full px-4 py-2.5 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <button type="submit" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-glow-blue transition-all">
+                    確認新增分類
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: CONFIRM RESET DATA MODAL -->
+    <div id="confirm-reset-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+        <div class="glass-card w-full max-w-md p-6 shadow-2xl border border-rose-500/40 animate-modal-in relative text-center space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl mx-auto border border-rose-500/30">
+                <i class="fa-solid fa-triangle-exclamation animate-pulse"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-white">確定要清空所有資料嗎？</h3>
+                <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                    這將會永久刪除您所有的交易紀錄、自訂預算上限與儲蓄目標進度。<br>
+                    <span class="text-rose-400 font-bold">此動作無法復原！</span>
+                </p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeConfirmResetModal()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                    取消
+                </button>
+                <button onclick="confirmResetData()" class="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition shadow-glow-rose">
+                    確認清空
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // ===================== GAS API =====================
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw6oSAmAtzIRN40b4ruORk8lNxYdrGHegssz_oI-t9-X4QRv5hukF2Jg9AFUSxBIHTy/exec";
+
+        // ===================== AUTH FUNCTIONS =====================
+
+        // 切換登入 / 註冊視圖
+        function switchAuthMode(mode) {
+            const loginView = document.getElementById('auth-login-view');
+            const registerView = document.getElementById('auth-register-view');
+            const loginErr = document.getElementById('login-error-box');
+            const regErr = document.getElementById('register-error-box');
+            if (loginErr) loginErr.classList.add('hidden');
+            if (regErr) regErr.classList.add('hidden');
+            if (mode === 'register') {
+                loginView.classList.add('hidden');
+                registerView.classList.remove('hidden');
+            } else {
+                registerView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+            }
+        }
+
+        // 顯示 / 隱藏密碼
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        // 登入送出
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorBox = document.getElementById('login-error-box');
+            const submitBtn = document.getElementById('login-submit-btn');
+            const submitText = document.getElementById('login-submit-text');
+            const submitSpinner = document.getElementById('login-submit-spinner');
+            const rememberMe = document.getElementById('login-remember-me');
+
+            errorBox.classList.add('hidden');
+            if (!username || !password) {
+                errorBox.innerText = "請輸入帳號與密碼";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitText.innerText = "登入中...";
+            submitSpinner.classList.remove('hidden');
+
+            try {
+                const res = await fetch(GAS_API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "login", username, password })
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    currentUsername = result.username || username;
+                    localStorage.setItem('pocketflow_username', currentUsername);
+                    localStorage.setItem('pocketflow_logged_in_user', currentUsername);
+                    updateUserProfileUI();
+                    const overlay = document.getElementById('login-overlay');
+                    overlay.classList.add('login-fade-out');
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        overlay.classList.remove('login-fade-out');
+                    }, 350);
+                    showToast(`歡迎回來，${currentUsername}！🎉`);
+                } else {
+                    errorBox.innerText = result.message || "帳號或密碼錯誤";
+                    errorBox.classList.remove('hidden');
+                    const card = document.getElementById('login-card');
+                    if (card) { card.classList.add('login-shake'); setTimeout(() => card.classList.remove('login-shake'), 400); }
+                }
+            } catch (err) {
+                showToast("連線失敗，請確認網路後再試", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitText.innerText = "登入";
+                submitSpinner.classList.add('hidden');
+            }
+        }
+
+        // 註冊送出
+        async function handleRegisterSubmit(event) {
+            event.preventDefault();
+            const username = document.getElementById('register-username').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirmPw = document.getElementById('register-confirm-password').value;
+            const errorBox = document.getElementById('register-error-box');
+            const submitBtn = document.getElementById('register-submit-btn');
+            const submitText = document.getElementById('register-submit-text');
+            const submitSpinner = document.getElementById('register-submit-spinner');
+
+            errorBox.classList.add('hidden');
+
+            // 前端驗證
+            if (!username || username.length < 3) {
+                errorBox.innerText = "帳號至少需要 3 個字元"; errorBox.classList.remove('hidden'); return;
+            }
+            if (!password || password.length < 6) {
+                errorBox.innerText = "密碼至少需要 6 個字元"; errorBox.classList.remove('hidden'); return;
+            }
+            if (password !== confirmPw) {
+                errorBox.innerText = "兩次密碼輸入不一致，請重新確認"; errorBox.classList.remove('hidden'); return;
+            }
+
+            submitBtn.disabled = true;
+            submitText.innerText = "註冊中...";
+            submitSpinner.classList.remove('hidden');
+
+            try {
+                const res = await fetch(GAS_API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "register", username, password })
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast("🎉 註冊成功！請使用新帳號登入", "success");
+                    document.getElementById('register-username').value = '';
+                    document.getElementById('register-password').value = '';
+                    document.getElementById('register-confirm-password').value = '';
+                    switchAuthMode('login');
+                    document.getElementById('login-username').value = username;
+                    document.getElementById('login-password').focus();
+                } else {
+                    errorBox.innerText = result.message || "註冊失敗，請稍後再試";
+                    errorBox.classList.remove('hidden');
+                }
+            } catch (err) {
+                showToast("連線失敗，請確認網路後再試", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitText.innerText = "建立帳號";
+                submitSpinner.classList.add('hidden');
+            }
+        }
+
+        // 登出
+        function handleLogout() {
+            localStorage.removeItem('pocketflow_logged_in_user');
+            showToast("已成功登出系統", "info");
+            const overlay = document.getElementById('login-overlay');
+            overlay.style.display = 'grid';
+            switchAuthMode('login');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+
+        // ===================== APP STATE =====================
+        let transactions = JSON.parse(localStorage.getItem('pocketflow_transactions')) || [];
+
+        let currentType = 'EXPENSE';
+        let comboChartInstance = null;
+        let doughnutChartInstance = null;
+        let analyticsBarInstance = null;
+        let analyticsCatInstance = null;
+
+        // Settings Preferences State (DEFAULT USERNAME: User)
+        let currentCurrency = localStorage.getItem('pocketflow_currency') || 'NT$';
+        let currentUsername = localStorage.getItem('pocketflow_username') || 'User';
+
+        // Goal State
+        let savedGoalAmount = parseFloat(localStorage.getItem('pocketflow_goal_saved')) || 0;
+        let targetGoalAmount = parseFloat(localStorage.getItem('pocketflow_goal_target')) || 20000;
+        let goalTitle = localStorage.getItem('pocketflow_goal_title') || '個人儲蓄目標';
+
+        // BUDGET CATEGORY DEFINITIONS (DEFAULT: 食衣住行育樂 + 收入目標)
+        const DEFAULT_EXPENSE_BUDGETS = {
+            '食': 8000,
+            '衣': 3000,
+            '住': 10000,
+            '行': 3000,
+            '育': 3000,
+            '樂': 4000,
+            '其他': 2000
+        };
+
+        const DEFAULT_INCOME_BUDGETS = {
+            '薪資收入': 45000,
+            '投資收益': 5000,
+            '其他收入': 5000
+        };
+
+        let expenseBudgets = JSON.parse(localStorage.getItem('pocketflow_expense_budgets')) || DEFAULT_EXPENSE_BUDGETS;
+        let incomeBudgets = JSON.parse(localStorage.getItem('pocketflow_income_budgets')) || DEFAULT_INCOME_BUDGETS;
+
+        // Initialize App on DOM Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            document.getElementById('input-date').value = todayStr;
+
+            // Set Combo Chart Title Dynamic Timestamp (matching image format "2026 Q3 預算及存款支出統計 - M/D")
+            const qStr = Math.floor((today.getMonth() + 3) / 3);
+            const titleEl = document.getElementById('combo-chart-title');
+            if (titleEl) {
+                titleEl.innerHTML = `<i class="fa-solid fa-chart-line text-brand-400"></i> ${today.getFullYear()} Q${qStr} 預算及存款支出統計 - ${today.getMonth()+1}/${today.getDate()}`;
+            }
+
+            updateUserProfileUI();
+            updateCurrencySymbolsUI();
+
+            renderStats();
+            renderRecentTransactions();
+            renderFullTransactions();
+            initCharts();
+            updateGoalUI();
+            updateAIAdvice();
+            renderBudgets();
+            renderAnalytics();
+
+            // Click outside notification listener
+            window.addEventListener('click', (e) => {
+                const notifWrapper = document.getElementById('notif-wrapper');
+                const notifDropdown = document.getElementById('notif-dropdown');
+                if (notifWrapper && !notifWrapper.contains(e.target)) {
+                    notifDropdown.classList.add('hidden');
+                }
+            });
+        });
+
+        // User Profile & Currency Preference Functions
+        function updateUserProfileUI() {
+            const headerName = document.getElementById('header-user-name');
+            const dashName = document.getElementById('dash-greeting-name');
+            const avatarBadge = document.getElementById('header-avatar-badge');
+            const settingInput = document.getElementById('setting-username-input');
+
+            if (headerName) headerName.innerText = currentUsername;
+            if (dashName) dashName.innerText = currentUsername;
+            if (avatarBadge) avatarBadge.innerText = currentUsername.charAt(0).toUpperCase();
+            if (settingInput) settingInput.value = currentUsername;
+        }
+
+        function saveUsernameSetting() {
+            const input = document.getElementById('setting-username-input');
+            if (!input) return;
+            const newName = input.value.trim() || 'User';
+            currentUsername = newName;
+            localStorage.setItem('pocketflow_username', currentUsername);
+            updateUserProfileUI();
+            showToast('已更新個人暱稱！');
+        }
+
+        function updateCurrencySymbolsUI() {
+            const selectEl = document.getElementById('setting-currency-select');
+            if (selectEl) selectEl.value = currentCurrency;
+
+            document.querySelectorAll('.currency-symbol').forEach(el => {
+                el.innerText = currentCurrency;
+            });
+            renderStats();
+            updateGoalUI();
+            renderBudgets();
+            renderAnalytics();
+        }
+
+        function saveCurrencySetting(val) {
+            currentCurrency = val;
+            localStorage.setItem('pocketflow_currency', currentCurrency);
+            updateCurrencySymbolsUI();
+            showToast(`已成功切換偏好貨幣為 ${currentCurrency}`);
+        }
+
+        // Toggle Sidebar Mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Switch View Tabs
+        function switchTab(tabName) {
+            const views = ['dashboard', 'transactions', 'analytics', 'budgets', 'goals', 'settings'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const nav = document.getElementById(`nav-${v}`);
+                if (el) el.classList.add('hidden');
+                if (nav) {
+                    nav.classList.remove('active', 'bg-brand-600/90', 'shadow-glow-blue', 'text-white');
+                    nav.classList.add('text-slate-400');
+                }
+            });
+
+            const targetView = document.getElementById(`view-${tabName}`);
+            const targetNav = document.getElementById(`nav-${tabName}`);
+            if (targetView) targetView.classList.remove('hidden');
+            if (targetNav) {
+                targetNav.classList.add('active', 'bg-brand-600/90', 'shadow-glow-blue', 'text-white');
+                targetNav.classList.remove('text-slate-400');
+            }
+
+            if (tabName === 'analytics') renderAnalytics();
+            if (tabName === 'budgets') renderBudgets();
+
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                toggleSidebar();
+            }
+        }
+
+        // Notification Dropdown Logic
+        function toggleNotificationDropdown(e) {
+            if (e) e.stopPropagation();
+            const dropdown = document.getElementById('notif-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function clearNotifs(e) {
+            if (e) e.stopPropagation();
+            const notifBadge = document.getElementById('notif-badge');
+            const notifList = document.getElementById('notif-list');
+            
+            if (notifBadge) notifBadge.classList.add('hidden');
+            if (notifList) {
+                notifList.innerHTML = `
+                    <div class="text-center py-6 text-slate-500 text-xs">
+                        <i class="fa-solid fa-bell-slash text-base mb-1 block"></i>
+                        目前無新通知
+                    </div>
+                `;
+            }
+            showToast('已將所有通知標為已讀');
+        }
+
+        function pushNotification(title, detail) {
+            const notifBadge = document.getElementById('notif-badge');
+            const notifList = document.getElementById('notif-list');
+            if (notifBadge) notifBadge.classList.remove('hidden');
+
+            const item = document.createElement('div');
+            item.className = 'flex items-start gap-3 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 animate-modal-in';
+            item.innerHTML = `
+                <div class="p-2 rounded-xl bg-brand-500/10 text-brand-400 text-xs mt-0.5">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold text-slate-200">${title}</p>
+                    <span class="text-[10px] text-slate-400">${detail}</span>
+                </div>
+            `;
+            if (notifList.querySelector('.fa-bell-slash')) {
+                notifList.innerHTML = '';
+            }
+            notifList.prepend(item);
+        }
+
+        // Quick Transaction Modal
+        function openModal() {
+            const modal = document.getElementById('modal');
+            document.getElementById('transaction-form').reset();
+            document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('input-amount').value = '';
+            document.getElementById('input-title').value = '';
+            currentType = 'EXPENSE';
+            setTransactionType('EXPENSE');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        // Goal Deposit Modal Functions
+        function openGoalDepositModal() {
+            const modal = document.getElementById('goal-deposit-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeGoalDepositModal() {
+            const modal = document.getElementById('goal-deposit-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function setDepositValue(val) {
+            document.getElementById('deposit-amount-input').value = val;
+        }
+
+        function handleDepositSubmit(e) {
+            e.preventDefault();
+            const val = parseFloat(document.getElementById('deposit-amount-input').value) || 0;
+            if (val <= 0) return;
+
+            savedGoalAmount += val;
+            if (savedGoalAmount > targetGoalAmount) savedGoalAmount = targetGoalAmount;
+
+            localStorage.setItem('pocketflow_goal_saved', savedGoalAmount);
+            updateGoalUI();
+            closeGoalDepositModal();
+
+            showToast(`成功存入 ${currentCurrency} ${val.toLocaleString()} 至 ${goalTitle}！🎉`);
+            pushNotification('儲蓄目標更新', `已存入 ${currentCurrency} ${val.toLocaleString()}，當前進度 ${((savedGoalAmount/targetGoalAmount)*100).toFixed(1)}%`);
+
+            if (savedGoalAmount >= targetGoalAmount) {
+                confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+                showToast(`恭喜！你已達成 ${goalTitle}！🏆`);
+            }
+        }
+
+        // Goal Edit Modal Functions
+        function openEditGoalModal() {
+            document.getElementById('goal-title-input').value = goalTitle;
+            document.getElementById('goal-target-input').value = targetGoalAmount;
+            const modal = document.getElementById('goal-edit-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeEditGoalModal() {
+            const modal = document.getElementById('goal-edit-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function handleEditGoalSubmit(e) {
+            e.preventDefault();
+            const newTitle = document.getElementById('goal-title-input').value.trim() || '個人儲蓄目標';
+            const newTarget = parseFloat(document.getElementById('goal-target-input').value) || 20000;
+
+            goalTitle = newTitle;
+            targetGoalAmount = newTarget;
+
+            localStorage.setItem('pocketflow_goal_title', goalTitle);
+            localStorage.setItem('pocketflow_goal_target', targetGoalAmount);
+
+            updateGoalUI();
+            closeEditGoalModal();
+            showToast('已成功更新儲蓄目標名稱與金額！');
+        }
+
+        // DYNAMIC BUDGET EDIT MODAL
+        function openEditBudgetsModal() {
+            const expContainer = document.getElementById('edit-expense-budgets-inputs');
+            const incContainer = document.getElementById('edit-income-budgets-inputs');
+
+            if (expContainer) {
+                expContainer.innerHTML = Object.keys(expenseBudgets).map(cat => `
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold text-slate-300 w-28">${cat}</span>
+                        <input type="number" id="b-exp-${cat}" value="${expenseBudgets[cat]}" required min="0" step="100" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-white">
+                        <button type="button" onclick="deleteCategory('EXPENSE', '${cat}')" class="text-slate-500 hover:text-rose-400 p-1 text-xs">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            if (incContainer) {
+                incContainer.innerHTML = Object.keys(incomeBudgets).map(cat => `
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold text-slate-300 w-28">${cat}</span>
+                        <input type="number" id="b-inc-${cat}" value="${incomeBudgets[cat]}" required min="0" step="100" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-white">
+                        <button type="button" onclick="deleteCategory('INCOME', '${cat}')" class="text-slate-500 hover:text-rose-400 p-1 text-xs">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            const modal = document.getElementById('budget-edit-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeEditBudgetsModal() {
+            const modal = document.getElementById('budget-edit-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function handleEditBudgetsSubmit(e) {
+            e.preventDefault();
+            Object.keys(expenseBudgets).forEach(cat => {
+                const el = document.getElementById(`b-exp-${cat}`);
+                if (el) expenseBudgets[cat] = parseFloat(el.value) || 0;
+            });
+            Object.keys(incomeBudgets).forEach(cat => {
+                const el = document.getElementById(`b-inc-${cat}`);
+                if (el) incomeBudgets[cat] = parseFloat(el.value) || 0;
+            });
+
+            localStorage.setItem('pocketflow_expense_budgets', JSON.stringify(expenseBudgets));
+            localStorage.setItem('pocketflow_income_budgets', JSON.stringify(incomeBudgets));
+
+            renderBudgets();
+            updateCharts();
+            closeEditBudgetsModal();
+            setTransactionType(currentType); // Sync select options
+            showToast('已成功儲蓄預算與收入目標！');
+        }
+
+        // ADD CUSTOM CATEGORY MODAL
+        function openAddCategoryModal() {
+            const modal = document.getElementById('add-category-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeAddCategoryModal() {
+            const modal = document.getElementById('add-category-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function handleAddCategorySubmit(e) {
+            e.preventDefault();
+            const type = document.getElementById('new-cat-type').value;
+            const name = document.getElementById('new-cat-name').value.trim();
+            const limit = parseFloat(document.getElementById('new-cat-limit').value) || 0;
+
+            if (!name) return;
+
+            if (type === 'EXPENSE') {
+                expenseBudgets[name] = limit;
+                localStorage.setItem('pocketflow_expense_budgets', JSON.stringify(expenseBudgets));
+            } else {
+                incomeBudgets[name] = limit;
+                localStorage.setItem('pocketflow_income_budgets', JSON.stringify(incomeBudgets));
+            }
+
+            renderBudgets();
+            updateCharts();
+            setTransactionType(currentType);
+            closeAddCategoryModal();
+            document.getElementById('new-cat-name').value = '';
+            showToast(`已成功新增分類「${name}」！`);
+        }
+
+        function deleteCategory(type, cat) {
+            if (type === 'EXPENSE') {
+                delete expenseBudgets[cat];
+                localStorage.setItem('pocketflow_expense_budgets', JSON.stringify(expenseBudgets));
+            } else {
+                delete incomeBudgets[cat];
+                localStorage.setItem('pocketflow_income_budgets', JSON.stringify(incomeBudgets));
+            }
+            openEditBudgetsModal(); // Refresh modal inputs
+            renderBudgets();
+            updateCharts();
+            setTransactionType(currentType);
+            showToast(`已移除分類「${cat}」`);
+        }
+
+        // Destructive Reset Safety Modal
+        function openConfirmResetModal() {
+            const modal = document.getElementById('confirm-reset-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeConfirmResetModal() {
+            const modal = document.getElementById('confirm-reset-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function confirmResetData() {
+            closeConfirmResetModal();
+            resetData();
+        }
+
+        // Data Backup: Export JSON
+        function exportDataJSON() {
+            const backupData = {
+                transactions,
+                expenseBudgets,
+                incomeBudgets,
+                savedGoalAmount,
+                targetGoalAmount,
+                goalTitle,
+                currentCurrency,
+                currentUsername,
+                exportDate: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `pocketflow_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showToast('已成功匯出 JSON 資料備份檔！');
+        }
+
+        // Data Backup: Import JSON
+        function importDataJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data.transactions)) {
+                        transactions = data.transactions;
+                        localStorage.setItem('pocketflow_transactions', JSON.stringify(transactions));
+                    }
+                    if (data.expenseBudgets) {
+                        expenseBudgets = data.expenseBudgets;
+                        localStorage.setItem('pocketflow_expense_budgets', JSON.stringify(expenseBudgets));
+                    }
+                    if (data.incomeBudgets) {
+                        incomeBudgets = data.incomeBudgets;
+                        localStorage.setItem('pocketflow_income_budgets', JSON.stringify(incomeBudgets));
+                    }
+                    if (data.savedGoalAmount !== undefined) {
+                        savedGoalAmount = parseFloat(data.savedGoalAmount);
+                        localStorage.setItem('pocketflow_goal_saved', savedGoalAmount);
+                    }
+                    if (data.targetGoalAmount !== undefined) {
+                        targetGoalAmount = parseFloat(data.targetGoalAmount);
+                        localStorage.setItem('pocketflow_goal_target', targetGoalAmount);
+                    }
+                    if (data.goalTitle) {
+                        goalTitle = data.goalTitle;
+                        localStorage.setItem('pocketflow_goal_title', goalTitle);
+                    }
+                    if (data.currentCurrency) {
+                        currentCurrency = data.currentCurrency;
+                        localStorage.setItem('pocketflow_currency', currentCurrency);
+                    }
+                    if (data.currentUsername) {
+                        currentUsername = data.currentUsername;
+                        localStorage.setItem('pocketflow_username', currentUsername);
+                    }
+
+                    updateUserProfileUI();
+                    updateCurrencySymbolsUI();
+                    renderStats();
+                    renderRecentTransactions();
+                    renderFullTransactions();
+                    updateCharts();
+                    renderBudgets();
+                    renderAnalytics();
+                    updateAIAdvice();
+
+                    showToast('已成功匯入 JSON 備份資料！🎉');
+                } catch (err) {
+                    showToast('匯入失敗，JSON 備份檔案格式不正確', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // DYNAMIC TRANSACTION TYPE & CATEGORY SELECTOR BINDING
+        function setTransactionType(type) {
+            currentType = type;
+            const btnExpense = document.getElementById('btn-type-expense');
+            const btnIncome = document.getElementById('btn-type-income');
+            const categorySelect = document.getElementById('input-category');
+
+            if (!categorySelect) return;
+
+            if (type === 'EXPENSE') {
+                btnExpense.className = "py-2.5 text-xs font-bold rounded-xl bg-rose-600 text-white shadow-md transition-all flex items-center justify-center gap-2";
+                btnIncome.className = "py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2";
+                
+                // Dynamically populate options from expenseBudgets
+                categorySelect.innerHTML = Object.keys(expenseBudgets).map(cat => `
+                    <option value="${cat}">${getCategoryEmoji(cat)} ${cat}</option>
+                `).join('');
+            } else {
+                btnIncome.className = "py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-md transition-all flex items-center justify-center gap-2";
+                btnExpense.className = "py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2";
+                
+                // Dynamically populate options from incomeBudgets
+                categorySelect.innerHTML = Object.keys(incomeBudgets).map(cat => `
+                    <option value="${cat}">${getCategoryEmoji(cat)} ${cat}</option>
+                `).join('');
+            }
+        }
+
+        function getCategoryEmoji(cat) {
+            const emojiMap = {
+                '食': '🍚', '衣': '👕', '住': '🏠', '行': '🚇', '育': '📚', '樂': '🎬', '其他': '📦',
+                '薪資收入': '💵', '投資收益': '📈', '其他收入': '💼'
+            };
+            return emojiMap[cat] || '🏷️';
+        }
+
+        function addAmount(val) {
+            const input = document.getElementById('input-amount');
+            const current = parseFloat(input.value) || 0;
+            input.value = current + val;
+        }
+
+        // Save Transaction
+        function saveTransaction(e) {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('input-amount').value);
+            const category = document.getElementById('input-category').value;
+            const title = document.getElementById('input-title').value.trim();
+            const date = document.getElementById('input-date').value;
+
+            if (!amount || amount <= 0) {
+                showToast('請輸入有效的金額！', 'error');
+                return;
+            }
+            if (!title) {
+                showToast('請輸入商家 / 備註內容！', 'error');
+                return;
+            }
+            if (!date) {
+                showToast('請選擇日期！', 'error');
+                return;
+            }
+
+            const newTx = {
+                id: Date.now(),
+                title,
+                amount,
+                type: currentType,
+                category,
+                date: date
+            };
+
+            transactions.unshift(newTx);
+            localStorage.setItem('pocketflow_transactions', JSON.stringify(transactions));
+
+            renderStats();
+            renderRecentTransactions();
+            renderFullTransactions();
+            updateCharts();
+            renderBudgets();
+            renderAnalytics();
+            closeModal();
+
+            document.getElementById('transaction-form').reset();
+            document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+            currentType = 'EXPENSE';
+            setTransactionType('EXPENSE');
+
+            const searchVal = document.getElementById('global-search').value;
+            if (searchVal) handleSearch(searchVal);
+
+            showToast(`已成功記錄 ${title} ${currentCurrency} ${amount.toLocaleString()}`);
+            pushNotification('新增交易明細', `${title} (${currentCurrency} ${amount.toLocaleString()})`);
+            updateAIAdvice();
+        }
+
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            localStorage.setItem('pocketflow_transactions', JSON.stringify(transactions));
+            renderStats();
+            renderRecentTransactions();
+            renderFullTransactions();
+            updateCharts();
+            renderBudgets();
+            renderAnalytics();
+            updateAIAdvice();
+
+            const searchVal = document.getElementById('global-search').value;
+            if (searchVal) handleSearch(searchVal);
+
+            showToast('已刪除該筆交易紀錄');
+        }
+
+        // Calculate Overview Metrics
+        function renderStats() {
+            let income = 0;
+            let expense = 0;
+
+            transactions.forEach(t => {
+                if (t.type === 'INCOME') {
+                    income += t.amount;
+                } else {
+                    expense += t.amount;
+                }
+            });
+
+            const balance = income - expense;
+
+            animateCountUp('stat-balance', balance);
+            animateCountUp('stat-income', income);
+            animateCountUp('stat-expense', expense);
+
+            const descBal = document.getElementById('stat-balance-desc');
+            const descBalBox = document.getElementById('stat-balance-desc-box');
+
+            if (descBal) {
+                if (transactions.length === 0) {
+                    descBal.innerText = '尚無收支紀錄';
+                    if (descBalBox) descBalBox.className = 'mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-800/40 px-3 py-1.5 rounded-xl w-max border border-slate-700/50';
+                } else if (balance < 0) {
+                    descBal.innerText = '本月支出大於收入 (赤字警示)';
+                    if (descBalBox) descBalBox.className = 'mt-4 flex items-center gap-2 text-xs font-semibold text-rose-400 bg-rose-500/10 px-3 py-1.5 rounded-xl w-max border border-rose-500/20';
+                } else {
+                    descBal.innerText = '財務狀況良好 (正向盈餘)';
+                    if (descBalBox) descBalBox.className = 'mt-4 flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl w-max border border-emerald-500/20';
+                }
+            }
+
+            const descInc = document.getElementById('stat-income-desc');
+            if (descInc) {
+                const incomeCount = transactions.filter(t => t.type === 'INCOME').length;
+                descInc.innerText = incomeCount > 0 ? `已記錄 ${incomeCount} 筆收入` : '尚未有收入紀錄';
+            }
+
+            const descExp = document.getElementById('stat-expense-desc');
+            if (descExp) {
+                const expenseCount = transactions.filter(t => t.type === 'EXPENSE').length;
+                descExp.innerText = expenseCount > 0 ? `已記錄 ${expenseCount} 筆支出` : '尚未有支出紀錄';
+            }
+
+            const count = transactions.length;
+            const percentage = Math.min(count * 5, 100);
+            
+            document.getElementById('sidebar-status-desc').innerText = `已記錄 ${count} 筆交易明細`;
+            document.getElementById('storage-bar').style.width = `${percentage}%`;
+            document.getElementById('sidebar-storage-text').innerText = `本地容量：${percentage}% 已使用 (${count} 筆紀錄)`;
+        }
+
+        function animateCountUp(elementId, targetValue) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            
+            const rawText = el.innerText.trim();
+            const match = rawText.match(/-?\d+/g);
+            const startNum = match ? parseInt(match.join('')) : 0;
+
+            const duration = 500;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const currentVal = Math.round(startNum + (targetValue - startNum) * progress);
+                
+                if (currentVal < 0) {
+                    el.innerText = `-${currentCurrency} ${Math.abs(currentVal).toLocaleString()}`;
+                } else {
+                    el.innerText = `${currentCurrency} ${currentVal.toLocaleString()}`;
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        function getCategoryMeta(category, type) {
+            if (type === 'INCOME') {
+                return { icon: 'fa-solid fa-coins', bg: 'bg-emerald-500/20', text: 'text-emerald-400' };
+            }
+            switch(category) {
+                case '食': return { icon: 'fa-solid fa-utensils', bg: 'bg-brand-500/20', text: 'text-brand-400' };
+                case '衣': return { icon: 'fa-solid fa-shirt', bg: 'bg-indigo-500/20', text: 'text-indigo-400' };
+                case '住': return { icon: 'fa-solid fa-house', bg: 'bg-emerald-500/20', text: 'text-emerald-400' };
+                case '行': return { icon: 'fa-solid fa-bus-simple', bg: 'bg-cyan-500/20', text: 'text-cyan-400' };
+                case '育': return { icon: 'fa-solid fa-book-open', bg: 'bg-amber-500/20', text: 'text-amber-400' };
+                case '樂': return { icon: 'fa-solid fa-gamepad', bg: 'bg-purple-500/20', text: 'text-purple-400' };
+                default: return { icon: 'fa-solid fa-bag-shopping', bg: 'bg-rose-500/20', text: 'text-rose-400' };
+            }
+        }
+
+        function renderRecentTransactions() {
+            const container = document.getElementById('recent-transactions-list');
+            const recent = transactions.slice(0, 5);
+
+            if (recent.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4 space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-xl mx-auto border border-brand-500/20">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <h4 class="text-sm font-bold text-white">尚無交易紀錄</h4>
+                        <p class="text-xs text-slate-400">點擊下方按鈕開始記錄第一筆帳目吧！</p>
+                        <button onclick="openModal()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-glow-blue transition">
+                            <i class="fa-solid fa-plus mr-1"></i> 新增交易明細
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = recent.map(t => {
+                const meta = getCategoryMeta(t.category, t.type);
+                const isIncome = t.type === 'INCOME';
+                const sign = isIncome ? '+' : '-';
+                const amountClass = isIncome ? 'text-emerald-400' : 'text-rose-400';
+
+                return `
+                    <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/60 hover:border-slate-700 transition group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 rounded-2xl ${meta.bg} ${meta.text} flex items-center justify-center text-sm">
+                                <i class="${meta.icon}"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">${t.title}</h4>
+                                <span class="text-[11px] text-slate-400">${t.date} • ${t.category}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-extrabold ${amountClass}">${sign}${currentCurrency} ${t.amount.toLocaleString()}</span>
+                            <button onclick="deleteTransaction(${t.id})" class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-1">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderFullTransactions(listToRender = null) {
+            const container = document.getElementById('full-transactions-list');
+            if (!container) return;
+
+            const list = listToRender || transactions;
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-10">目前無符合條件的交易明細</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(t => {
+                const meta = getCategoryMeta(t.category, t.type);
+                const isIncome = t.type === 'INCOME';
+                const sign = isIncome ? '+' : '-';
+                const amountClass = isIncome ? 'text-emerald-400' : 'text-rose-400';
+
+                return `
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition">
+                        <div class="flex items-center gap-4">
+                            <div class="w-11 h-11 rounded-2xl ${meta.bg} ${meta.text} flex items-center justify-center text-base">
+                                <i class="${meta.icon}"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">${t.title}</h4>
+                                <span class="text-xs text-slate-400">${t.date} • ${t.category}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-base font-extrabold ${amountClass}">${sign}${currentCurrency} ${t.amount.toLocaleString()}</span>
+                            <button onclick="deleteTransaction(${t.id})" class="text-slate-500 hover:text-rose-400 transition p-1.5">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function applyFilters() {
+            const cat = document.getElementById('filter-category').value;
+            if (cat === 'ALL') {
+                renderFullTransactions(transactions);
+            } else if (cat === 'INCOME') {
+                const filtered = transactions.filter(t => t.type === 'INCOME');
+                renderFullTransactions(filtered);
+            } else {
+                const filtered = transactions.filter(t => t.category === cat && t.type === 'EXPENSE');
+                renderFullTransactions(filtered);
+            }
+        }
+
+        function handleSearch(query) {
+            const q = query.toLowerCase().trim();
+            if (!q) {
+                renderRecentTransactions();
+                applyFilters();
+                return;
+            }
+
+            const filtered = transactions.filter(t => t.title.toLowerCase().includes(q) || t.category.includes(q) || t.amount.toString().includes(q));
+            
+            const container = document.getElementById('recent-transactions-list');
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">未搜尋到相關交易內容</p>`;
+            } else {
+                container.innerHTML = filtered.slice(0, 5).map(t => {
+                    const meta = getCategoryMeta(t.category, t.type);
+                    const isIncome = t.type === 'INCOME';
+                    return `
+                        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-2xl ${meta.bg} ${meta.text} flex items-center justify-center text-sm">
+                                    <i class="${meta.icon}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-white">${t.title}</h4>
+                                    <span class="text-[11px] text-slate-400">${t.date} • ${t.category}</span>
+                                </div>
+                            </div>
+                            <span class="text-sm font-extrabold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">${isIncome ? '+' : '-'}${currentCurrency} ${t.amount.toLocaleString()}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderFullTransactions(filtered);
+        }
+
+        // ─── COMBO CHART DATA ENGINE (EXACT MATCH FOR USER EXCEL IMAGE SPEC) ───────
+        function buildComboChartData() {
+            const now = new Date();
+            const splitMonth = now.getMonth(); // current month index (0-based)
+
+            const monthlyIncome  = new Array(12).fill(0);
+            const monthlyExpense = new Array(12).fill(0);
+            const currentYear = now.getFullYear();
+
+            transactions.forEach(t => {
+                const d = new Date(t.date);
+                if (d.getFullYear() !== currentYear) return;
+                const m = d.getMonth();
+                if (t.type === 'INCOME') monthlyIncome[m] += t.amount;
+                else                     monthlyExpense[m] += t.amount;
+            });
+
+            // 1. 實際存款 (Bar, Blue): 1-7月顯現流量，8-12月為 null
+            const actualSavingsBar = monthlyIncome.map((v, i) => i <= splitMonth ? (v || 0) : null);
+            // 2. 實際支出 (Bar, Orange): 1-7月顯現流量，8-12月為 null
+            const actualExpenseBar = monthlyExpense.map((v, i) => i <= splitMonth ? (v || 0) : null);
+
+            // 3. 累積與預估算
+            const cumSavings = [];
+            const cumExpense = [];
+            let runInc = 0, runExp = 0;
+            for (let i = 0; i < 12; i++) {
+                if (i <= splitMonth) {
+                    runInc += monthlyIncome[i];
+                    runExp += monthlyExpense[i];
+                    cumSavings.push(runInc);
+                    cumExpense.push(runExp);
+                } else {
+                    const histCount = splitMonth + 1;
+                    const avgInc = histCount > 0 ? runInc / histCount : 0;
+                    const avgExp = histCount > 0 ? runExp / histCount : 0;
+                    const futureOffset = i - splitMonth;
+                    cumSavings.push(runInc + avgInc * futureOffset);
+                    cumExpense.push(runExp + avgExp * futureOffset);
+                }
+            }
+
+            // 4. 存款餘額 (Bar, Gray, Right Axis): 全全月份
+            const totalBalanceBar = cumSavings.map((inc, i) => Math.max(inc - cumExpense[i], 0));
+
+            // 5. 年度預支 (Yellow Line, Right Axis)
+            let totalExpenseBudgetPerMonth = 0;
+            Object.values(expenseBudgets).forEach(l => totalExpenseBudgetPerMonth += l);
+            const annualBudgetBase = Array.from({ length: 12 }, (_, i) => totalExpenseBudgetPerMonth * (i + 1));
+
+            // 6. 增減預支 (Yellow Dashed Line, Right Axis)
+            const recentMonths = Math.min(3, splitMonth + 1);
+            let recentExpSum = 0;
+            for (let i = splitMonth; i > splitMonth - recentMonths; i--) {
+                recentExpSum += monthlyExpense[i];
+            }
+            const recentAvgExp = recentMonths > 0 ? recentExpSum / recentMonths : 0;
+            const trendFactor = totalExpenseBudgetPerMonth > 0 ? recentAvgExp / totalExpenseBudgetPerMonth : 1;
+
+            const adjustedBudgetForecast = annualBudgetBase.map((base, i) => {
+                if (i < splitMonth) return null;
+                const pastExpCum = cumExpense[splitMonth];
+                const futureOffset = i - splitMonth;
+                return pastExpCum + recentAvgExp * trendFactor * futureOffset;
+            });
+
+            return {
+                splitMonth,
+                actualSavingsBar,
+                actualExpenseBar,
+                totalBalanceBar,
+                cumSavings,
+                cumExpense,
+                annualBudgetBase,
+                adjustedBudgetForecast
+            };
+        }
+
+        // INITIALIZE ALL CHARTS WITH EXCEL STYLING
+        function initCharts() {
+            const ctxCombo = document.getElementById('comboChart').getContext('2d');
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+            const d = buildComboChartData();
+            const splitMonth = d.splitMonth;
+
+            comboChartInstance = new Chart(ctxCombo, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        // 1. 實際存款 (Bar, Blue #2563EB, Left Y Axis)
+                        {
+                            type: 'bar',
+                            label: '實際存款',
+                            data: d.actualSavingsBar,
+                            backgroundColor: '#2563EB',
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                            order: 4
+                        },
+                        // 2. 實際支出 (Bar, Orange #F97316, Left Y Axis)
+                        {
+                            type: 'bar',
+                            label: '實際支出',
+                            data: d.actualExpenseBar,
+                            backgroundColor: '#F97316',
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                            order: 4
+                        },
+                        // 3. 存款餘額 (Bar, Gray, Right Y Axis)
+                        {
+                            type: 'bar',
+                            label: '存款餘額',
+                            data: d.totalBalanceBar,
+                            backgroundColor: 'rgba(148, 163, 184, 0.4)',
+                            borderColor: 'rgba(148, 163, 184, 0.6)',
+                            borderWidth: 1,
+                            yAxisID: 'y1',
+                            order: 5
+                        },
+                        // 4. 年度預支 (Yellow Solid Line, Right Y Axis)
+                        {
+                            type: 'line',
+                            label: '年度預支',
+                            data: d.annualBudgetBase,
+                            borderColor: '#FACC15',
+                            borderWidth: 3,
+                            pointRadius: 2,
+                            yAxisID: 'y1',
+                            order: 2
+                        },
+                        // 5. 增減預支 (Yellow Dashed Line, Right Y Axis)
+                        {
+                            type: 'line',
+                            label: '增減預支',
+                            data: d.adjustedBudgetForecast,
+                            borderColor: '#FACC15',
+                            borderDash: [5, 5],
+                            borderWidth: 2.5,
+                            pointRadius: 3,
+                            yAxisID: 'y1',
+                            order: 0
+                        },
+                        // 6. 累積存款 (Green Solid Line, Right Y Axis)
+                        {
+                            type: 'line',
+                            label: '累積存款',
+                            data: d.cumSavings,
+                            borderColor: '#22C55E',
+                            borderWidth: 3,
+                            pointRadius: 2,
+                            yAxisID: 'y1',
+                            order: 1,
+                            segment: {
+                                borderDash: ctx => ctx.p0DataIndex >= splitMonth ? [5, 5] : undefined
+                            }
+                        },
+                        // 7. 預估存款 (Green Dashed Line, Right Y Axis)
+                        {
+                            type: 'line',
+                            label: '預估存款',
+                            data: d.cumSavings,
+                            borderColor: '#22C55E',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            yAxisID: 'y1',
+                            order: 0
+                        },
+                        // 8. 累積支出 (Brown Solid Line #854D0E, Right Y Axis)
+                        {
+                            type: 'line',
+                            label: '累積支出',
+                            data: d.cumExpense,
+                            borderColor: '#9A3412',
+                            borderWidth: 3,
+                            pointRadius: 2,
+                            yAxisID: 'y1',
+                            order: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#CBD5E1',
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1E293B',
+                            titleColor: '#F8FAFC',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            cornerRadius: 12,
+                            padding: 12
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94A3B8', font: { family: 'Plus Jakarta Sans', size: 11 } }
+                        },
+                        // Left Y Axis (Single Month Flow, Support Negative Values like Excel)
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            suggestedMin: -50000,
+                            suggestedMax: 300000,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94A3B8', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        },
+                        // Right Y Axis (Cumulative & Balance: 0 ~ 1,000,000)
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            suggestedMin: 0,
+                            suggestedMax: 1000000,
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#94A3B8', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        }
+                    }
+                }
+            });
+
+            // 2. Dashboard Doughnut Chart
+            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+            doughnutChartInstance = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(expenseBudgets),
+                    datasets: [{
+                        data: new Array(Object.keys(expenseBudgets).length).fill(0),
+                        backgroundColor: ['#2563EB', '#6366F1', '#10B981', '#06B6D4', '#F59E0B', '#A855F7', '#EF4444', '#EC4899'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            updateCharts();
+        }
+
+        function updateCharts() {
+            if (comboChartInstance) {
+                const d = buildComboChartData();
+                const sp = d.splitMonth;
+                const ds = comboChartInstance.data.datasets;
+                ds[0].data = d.actualSavingsBar;
+                ds[1].data = d.actualExpenseBar;
+                ds[2].data = d.totalBalanceBar;
+                ds[3].data = d.annualBudgetBase;
+                ds[4].data = d.adjustedBudgetForecast;
+                ds[5].data = d.cumSavings;
+                ds[5].segment = { borderDash: ctx => ctx.p0DataIndex >= sp ? [5, 5] : undefined };
+                ds[6].data = d.cumSavings;
+                ds[7].data = d.cumExpense;
+                comboChartInstance.update();
+            }
+
+            if (!doughnutChartInstance) return;
+
+            const expenses = transactions.filter(t => t.type === 'EXPENSE');
+
+            const categoryTotals = {};
+            Object.keys(expenseBudgets).forEach(k => categoryTotals[k] = 0);
+
+            let totalExpense = 0;
+            expenses.forEach(t => {
+                const k = categoryTotals.hasOwnProperty(t.category) ? t.category : '其他';
+                categoryTotals[k] = (categoryTotals[k] || 0) + t.amount;
+                totalExpense += t.amount;
+            });
+
+            const catKeys = Object.keys(categoryTotals);
+            doughnutChartInstance.data.labels = catKeys;
+
+            if (expenses.length === 0) {
+                doughnutChartInstance.data.datasets[0].data = new Array(catKeys.length).fill(0);
+                doughnutChartInstance.update();
+                document.getElementById('category-legend-list').innerHTML = catKeys.map(k => `
+                    <div class="flex items-center justify-between text-xs bg-slate-900/40 p-1.5 rounded-xl border border-slate-800/50">
+                        <span class="text-slate-300 font-semibold">${getCategoryEmoji(k)} ${k}</span>
+                        <span class="text-slate-400 font-bold text-[11px]">0%</span>
+                    </div>
+                `).join('');
+                return;
+            }
+
+            doughnutChartInstance.data.datasets[0].data = Object.values(categoryTotals);
+            doughnutChartInstance.update();
+
+            const legendHtml = catKeys.map(key => {
+                const amt = categoryTotals[key] || 0;
+                const pct = totalExpense > 0 ? Math.round((amt / totalExpense) * 100) : 0;
+                return `
+                    <div class="flex items-center justify-between text-xs bg-slate-900/40 p-1.5 rounded-xl border border-slate-800/50">
+                        <span class="text-slate-300 font-semibold">${getCategoryEmoji(key)} ${key}</span>
+                        <span class="text-slate-400 font-bold text-[11px]">${pct}%</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('category-legend-list').innerHTML = legendHtml;
+        }
+
+        // BUDGET MONITORING MODULE (DYNAMIC EXPENSE & INCOME TARGETS)
+        function renderBudgets() {
+            const listEl = document.getElementById('category-budget-list');
+            const incListEl = document.getElementById('income-budget-list');
+            if (!listEl) return;
+
+            const categoryExpenses = {};
+            Object.keys(expenseBudgets).forEach(k => categoryExpenses[k] = 0);
+            let totalExpenseUsed = 0;
+
+            transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
+                const k = categoryExpenses.hasOwnProperty(t.category) ? t.category : '其他';
+                categoryExpenses[k] = (categoryExpenses[k] || 0) + t.amount;
+                totalExpenseUsed += t.amount;
+            });
+
+            let totalExpenseLimit = 0;
+            Object.values(expenseBudgets).forEach(l => totalExpenseLimit += l);
+
+            let totalIncomeTarget = 0;
+            Object.values(incomeBudgets).forEach(l => totalIncomeTarget += l);
+
+            const limitEl = document.getElementById('budget-total-limit');
+            const usedEl = document.getElementById('budget-total-used');
+            const incTargetEl = document.getElementById('budget-income-target');
+
+            if (limitEl) limitEl.innerText = `${currentCurrency} ${totalExpenseLimit.toLocaleString()}`;
+            if (usedEl) usedEl.innerText = `${currentCurrency} ${totalExpenseUsed.toLocaleString()}`;
+            if (incTargetEl) incTargetEl.innerText = `${currentCurrency} ${totalIncomeTarget.toLocaleString()}`;
+
+            // Render Expense Progress Bars
+            listEl.innerHTML = Object.keys(expenseBudgets).map(cat => {
+                const limit = expenseBudgets[cat];
+                const used = categoryExpenses[cat] || 0;
+                const rawPct = limit > 0 ? (used / limit) * 100 : 0;
+                const pct = Math.min(rawPct, 100).toFixed(1);
+
+                let barColor = 'bg-brand-500';
+                let statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 rounded-lg">預算健康</span>`;
+
+                if (rawPct >= 100) {
+                    barColor = 'bg-rose-500';
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold bg-rose-500/20 text-rose-400 rounded-lg animate-pulse">⚠️ 超出預算</span>`;
+                } else if (rawPct >= 80) {
+                    barColor = 'bg-amber-500';
+                    statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-lg">臨近預算上限</span>`;
+                }
+
+                return `
+                    <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">${getCategoryEmoji(cat)}</span>
+                                <span class="text-sm font-bold text-white">${cat} 支出預算</span>
+                                ${statusBadge}
+                            </div>
+                            <span class="text-xs font-semibold text-slate-300">
+                                ${currentCurrency} ${used.toLocaleString()} / <span class="text-slate-400">${currentCurrency} ${limit.toLocaleString()}</span>
+                            </span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                            <div class="${barColor} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Render Income Target Progress Bars
+            const categoryIncomes = {};
+            Object.keys(incomeBudgets).forEach(k => categoryIncomes[k] = 0);
+
+            transactions.filter(t => t.type === 'INCOME').forEach(t => {
+                const k = categoryIncomes.hasOwnProperty(t.category) ? t.category : '其他收入';
+                categoryIncomes[k] = (categoryIncomes[k] || 0) + t.amount;
+            });
+
+            if (incListEl) {
+                incListEl.innerHTML = Object.keys(incomeBudgets).map(cat => {
+                    const target = incomeBudgets[cat];
+                    const earned = categoryIncomes[cat] || 0;
+                    const rawPct = target > 0 ? (earned / target) * 100 : 0;
+                    const pct = Math.min(rawPct, 100).toFixed(1);
+
+                    return `
+                        <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">${getCategoryEmoji(cat)}</span>
+                                    <span class="text-sm font-bold text-white">${cat} 目標</span>
+                                    <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 rounded-lg">目標達成率 ${pct}%</span>
+                                </div>
+                                <span class="text-xs font-semibold text-emerald-400">
+                                    ${currentCurrency} ${earned.toLocaleString()} / <span class="text-slate-400">${currentCurrency} ${target.toLocaleString()}</span>
+                                </span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                                <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // DYNAMIC ANALYTICS MODULE
+        function renderAnalytics() {
+            const expenses = transactions.filter(t => t.type === 'EXPENSE');
+            const incomes = transactions.filter(t => t.type === 'INCOME');
+
+            let totalExp = 0;
+            expenses.forEach(t => totalExp += t.amount);
+            let totalInc = 0;
+            incomes.forEach(t => totalInc += t.amount);
+
+            const dailyAvg = Math.round(totalExp / 30);
+            document.getElementById('analytics-daily-avg').innerText = `${currentCurrency} ${dailyAvg.toLocaleString()}`;
+
+            let maxExp = 0;
+            let maxTitle = '無單筆支出';
+            expenses.forEach(t => {
+                if (t.amount > maxExp) {
+                    maxExp = t.amount;
+                    maxTitle = `${t.title} (${t.category})`;
+                }
+            });
+            document.getElementById('analytics-max-exp').innerText = `${currentCurrency} ${maxExp.toLocaleString()}`;
+            document.getElementById('analytics-max-exp-title').innerText = maxTitle;
+
+            const savingsRate = totalInc > 0 ? (((totalInc - totalExp) / totalInc) * 100).toFixed(1) : '0.0';
+            document.getElementById('analytics-savings-rate').innerText = `${savingsRate}%`;
+
+            let healthScore = 100;
+            let healthDesc = '財務狀況極佳';
+            if (totalInc > 0 && totalExp > totalInc) {
+                healthScore = 55;
+                healthDesc = '赤字提示：支出超過收入';
+            } else if (parseFloat(savingsRate) < 20 && totalInc > 0) {
+                healthScore = 75;
+                healthDesc = '儲蓄率較低，建議控制消費';
+            }
+            document.getElementById('analytics-health-score').innerText = `${healthScore} 分`;
+            document.getElementById('analytics-health-desc').innerText = healthDesc;
+
+            initAnalyticsCharts(incomes, expenses);
+        }
+
+        function initAnalyticsCharts(incomes, expenses) {
+            const ctxBar = document.getElementById('analyticsBarChart');
+            const ctxCat = document.getElementById('analyticsCategoryChart');
+            if (!ctxBar || !ctxCat) return;
+
+            const incomeAmt = incomes.reduce((acc, t) => acc + t.amount, 0);
+            const expenseAmt = expenses.reduce((acc, t) => acc + t.amount, 0);
+
+            if (analyticsBarInstance) analyticsBarInstance.destroy();
+            analyticsBarInstance = new Chart(ctxBar.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['本月總收入', '本月總支出'],
+                    datasets: [{
+                        label: `金額 (${currentCurrency})`,
+                        data: [incomeAmt, expenseAmt],
+                        backgroundColor: ['#10B981', '#EF4444'],
+                        borderRadius: 12,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94A3B8' } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8' } }
+                    }
+                }
+            });
+
+            const categoryTotals = {};
+            Object.keys(expenseBudgets).forEach(k => categoryTotals[k] = 0);
+            expenses.forEach(t => {
+                const k = categoryTotals.hasOwnProperty(t.category) ? t.category : '其他';
+                categoryTotals[k] = (categoryTotals[k] || 0) + t.amount;
+            });
+
+            if (analyticsCatInstance) analyticsCatInstance.destroy();
+            analyticsCatInstance = new Chart(ctxCat.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(categoryTotals),
+                    datasets: [{
+                        label: `食衣住行育樂支出 (${currentCurrency})`,
+                        data: Object.values(categoryTotals),
+                        backgroundColor: ['#2563EB', '#6366F1', '#10B981', '#06B6D4', '#F59E0B', '#A855F7', '#EF4444'],
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94A3B8' } },
+                        y: { grid: { display: false }, ticks: { color: '#94A3B8' } }
+                    }
+                }
+            });
+        }
+
+        // FULLY FIXED GOAL UI SYNC
+        function updateGoalUI() {
+            if (targetGoalAmount <= 0) targetGoalAmount = 20000;
+            const rawPercent = (savedGoalAmount / targetGoalAmount) * 100;
+            const percent = isNaN(rawPercent) ? '0.0' : Math.min(rawPercent, 100).toFixed(1);
+
+            const titleDisp = document.getElementById('goal-title-display');
+            const targetDisp = document.getElementById('goal-target-display');
+            const savedText = document.getElementById('goal-saved-text');
+            const progressBar = document.getElementById('goal-progress-bar');
+            const badge = document.getElementById('goal-percent-badge');
+
+            if (titleDisp) titleDisp.innerText = goalTitle;
+            if (targetDisp) targetDisp.innerText = `目標 ${currentCurrency} ${targetGoalAmount.toLocaleString()}`;
+            if (savedText) savedText.innerText = `${currentCurrency} ${savedGoalAmount.toLocaleString()}`;
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            if (badge) badge.innerText = `${percent}%`;
+
+            const goalTabName = document.getElementById('goal-tab-name');
+            const goalTabProgress = document.getElementById('goal-tab-progress');
+            const goalTabText = document.getElementById('goal-tab-text');
+            
+            if (goalTabName) goalTabName.innerText = `🎯 ${goalTitle}`;
+            if (goalTabProgress) goalTabProgress.style.width = `${percent}%`;
+            if (goalTabText) goalTabText.innerText = `${currentCurrency} ${savedGoalAmount.toLocaleString()} / ${currentCurrency} ${targetGoalAmount.toLocaleString()}`;
+        }
+
+        function updateAIAdvice() {
+            const adviceEl = document.getElementById('ai-advice-text');
+            if (!adviceEl) return;
+
+            const expenses = transactions.filter(t => t.type === 'EXPENSE');
+            if (expenses.length === 0) {
+                adviceEl.innerHTML = `「歡迎使用 PocketFlow！當你開始輸入記帳明細後，AI 財務助理會自動分析你的消費趨勢並提供省錢建議。」`;
+                return;
+            }
+
+            const catMap = {};
+            let total = 0;
+            expenses.forEach(t => {
+                catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+                total += t.amount;
+            });
+
+            let topCat = '食';
+            let maxAmt = 0;
+            for (let c in catMap) {
+                if (catMap[c] > maxAmt) {
+                    maxAmt = catMap[c];
+                    topCat = c;
+                }
+            }
+
+            const p = Math.round((maxAmt / total) * 100);
+            adviceEl.innerHTML = `「分析顯示你目前最高支出分類為<span class="text-brand-400 font-bold">${topCat}（${p}%）</span>，總計 ${currentCurrency} ${maxAmt.toLocaleString()}。建議設定該分類的預算上限以維持良好儲蓄率。」`;
+        }
+
+        function generateFreshAIAdvice() {
+            showToast('AI 助理正在分析你的最新消費數據...', 'info');
+            setTimeout(() => {
+                updateAIAdvice();
+                showToast('已根據你最新的交易紀錄生成最佳省錢策略！✨');
+            }, 600);
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'error' ? 'bg-rose-600' : 'bg-slate-900/90 border border-brand-500/40 text-slate-100 shadow-glow-blue';
+            toast.className = `px-4 py-3 rounded-2xl ${bgClass} backdrop-blur-md text-xs font-semibold flex items-center gap-2 pointer-events-auto transition-all transform translate-y-2 opacity-0 animate-modal-in`;
+            
+            toast.innerHTML = `
+                <i class="fa-solid fa-circle-check text-brand-400"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Reset All Data Completely Clean
+        function resetData() {
+            localStorage.removeItem('pocketflow_transactions');
+            localStorage.removeItem('pocketflow_goal_saved');
+            localStorage.removeItem('pocketflow_goal_target');
+            localStorage.removeItem('pocketflow_goal_title');
+            localStorage.removeItem('pocketflow_expense_budgets');
+            localStorage.removeItem('pocketflow_income_budgets');
+            localStorage.removeItem('pocketflow_currency');
+            localStorage.removeItem('pocketflow_username');
+
+            transactions = [];
+            savedGoalAmount = 0;
+            targetGoalAmount = 20000;
+            goalTitle = '個人儲蓄目標';
+            expenseBudgets = { ...DEFAULT_EXPENSE_BUDGETS };
+            incomeBudgets = { ...DEFAULT_INCOME_BUDGETS };
+            currentCurrency = 'NT$';
+            currentUsername = 'User';
+
+            updateUserProfileUI();
+            updateCurrencySymbolsUI();
+            renderStats();
+            renderRecentTransactions();
+            renderFullTransactions();
+            updateGoalUI();
+            setTransactionType('EXPENSE');
+            updateCharts();
+            renderBudgets();
+            renderAnalytics();
+            updateAIAdvice();
+            showToast('已成功將資料庫與偏好設定完全清空重置！');
+        }
+
+        // ============================================================
+        // 新增：使用者登入系統 (Google Sheets + Google Apps Script)
+        // ============================================================
+
+        // 你的 Google Apps Script 部署網址
+        const LOGIN_API_URL = "https://script.google.com/macros/s/AKfycbw6oSAmAtzIRN40b4ruORk8lNxYdrGHegssz_oI-t9-X4QRv5hukF2Jg9AFUSxBIHTy/exec";
+        // 用來儲存「記住我」登入狀態的 localStorage key
+        const LOGIN_STORAGE_KEY = "pocketflow_logged_in_user";
+
+        // 這裡使用獨立的 DOMContentLoaded 監聽器，不會動到你原本的初始化程式碼
+        document.addEventListener('DOMContentLoaded', () => {
+            const rememberedUser = localStorage.getItem(LOGIN_STORAGE_KEY);
+
+            if (rememberedUser) {
+                // 偵測到「記住我」紀錄，直接跳過登入畫面
+                hideLoginOverlay(rememberedUser);
+            } else {
+                renderLoginAccountSettingUI();
+            }
+
+            updateLoginGreeting();
+
+            // 使用者開始輸入密碼時，自動清除錯誤提示
+            const pwInput = document.getElementById('login-password');
+            if (pwInput) {
+                pwInput.addEventListener('input', () => {
+                    const errorBox = document.getElementById('login-error-box');
+                    if (errorBox) errorBox.classList.add('hidden');
+                });
+            }
+        });
+
+        // 依目前時間顯示對應問候語(早安 / 午安 / 晚安)
+        function updateLoginGreeting() {
+            const el = document.getElementById('login-greeting-text');
+            if (!el) return;
+            const hour = new Date().getHours();
+            let greeting = '晚安';
+            if (hour >= 5 && hour < 12) greeting = '早安';
+            else if (hour >= 12 && hour < 18) greeting = '午安';
+            el.innerText = greeting + '，歡迎回來';
+        }
+
+        // 顯示 / 隱藏密碼按鈕
+        function toggleLoginPasswordVisibility() {
+            const pwInput = document.getElementById('login-password');
+            const icon = document.getElementById('login-toggle-pw-icon');
+            if (!pwInput || !icon) return;
+
+            if (pwInput.type === 'password') {
+                pwInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // 登入表單送出時觸發
+        function handleLoginSubmit(event) {
+            event.preventDefault(); // 阻止表單預設送出行為(避免整頁重新整理)
+
+            const usernameInput = document.getElementById('login-username');
+            const passwordInput = document.getElementById('login-password');
+            const rememberMe = document.getElementById('login-remember-me');
+            const errorBox = document.getElementById('login-error-box');
+            const submitBtn = document.getElementById('login-submit-btn');
+            const submitText = document.getElementById('login-submit-text');
+            const submitSpinner = document.getElementById('login-submit-spinner');
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (errorBox) errorBox.classList.add('hidden');
+
+            // 顯示「登入中」載入動畫，並鎖定按鈕避免重複送出
+            submitBtn.disabled = true;
+            submitText.innerText = '登入中...';
+            submitSpinner.classList.remove('hidden');
+
+            fetch(LOGIN_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ username: username, password: password })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // 登入成功
+                        if (rememberMe && rememberMe.checked) {
+                            localStorage.setItem(LOGIN_STORAGE_KEY, data.username || username);
+                        }
+                        hideLoginOverlay(data.username || username);
+                        showToast(`歡迎回來，${data.username || username}！`);
+                    } else {
+                        // 登入失敗：帳號或密碼錯誤
+                        showLoginError(data.message || '帳號或密碼錯誤');
+                    }
+                })
+                .catch(err => {
+                    // 網路錯誤或 API 無法連線
+                    showLoginError('無法連線到伺服器，請檢查網路後再試一次');
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitText.innerText = '登入';
+                    submitSpinner.classList.add('hidden');
+                });
+        }
+
+        // 顯示登入失敗訊息 + 卡片抖動動畫
+        function showLoginError(message) {
+            const errorBox = document.getElementById('login-error-box');
+            const loginCard = document.getElementById('login-card');
+
+            if (errorBox) {
+                errorBox.innerText = message;
+                errorBox.classList.remove('hidden');
+            }
+
+            if (loginCard) {
+                loginCard.classList.remove('login-shake');
+                void loginCard.offsetWidth; // 強制瀏覽器重新計算，讓動畫可以重複觸發
+                loginCard.classList.add('login-shake');
+            }
+        }
+
+        // 登入成功後，隱藏登入畫面並更新使用者顯示名稱
+        function hideLoginOverlay(loggedInUsername) {
+            const overlay = document.getElementById('login-overlay');
+            if (overlay) {
+                overlay.classList.add('login-fade-out');
+                setTimeout(() => { overlay.style.display = 'none'; }, 350);
+            }
+
+            if (loggedInUsername) {
+                // 沿用你原本既有的 currentUsername 與 updateUserProfileUI()，不重寫任何顯示邏輯
+                currentUsername = loggedInUsername;
+                localStorage.setItem('pocketflow_username', currentUsername);
+                if (typeof updateUserProfileUI === 'function') {
+                    updateUserProfileUI();
+                }
+                // 登入成功後，導回 Dashboard 主頁面(沿用原本既有的 switchTab 函式)
+                if (typeof switchTab === 'function') {
+                    switchTab('dashboard');
+                }
+            }
+
+            renderLoginAccountSettingUI();
+        }
+
+        // 登出：清除「記住我」紀錄，重新顯示登入畫面
+        function handleLogout() {
+            localStorage.removeItem(LOGIN_STORAGE_KEY);
+
+            const overlay = document.getElementById('login-overlay');
+            if (overlay) {
+                overlay.style.display = ''; // 清空 inline style，改由 CSS 的 grid 版面接管，避免版面跑掉
+                overlay.classList.remove('login-fade-out');
+            }
+
+            const usernameInput = document.getElementById('login-username');
+            const passwordInput = document.getElementById('login-password');
+            if (usernameInput) usernameInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+
+            renderLoginAccountSettingUI();
+            showToast('已成功登出');
+        }
+
+        // 更新「設定」分頁裡顯示的目前登入帳號
+        function renderLoginAccountSettingUI() {
+            const el = document.getElementById('setting-login-account-display');
+            const rememberedUser = localStorage.getItem(LOGIN_STORAGE_KEY);
+            if (el) {
+                el.innerText = rememberedUser ? rememberedUser : (currentUsername || '未登入');
+            }
+        }
+    </script>
+</body>
+</html>
