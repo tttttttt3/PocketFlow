@@ -1009,7 +1009,36 @@
                                 </select>
                             </div>
 
-                            <!-- 3. Data Backup (Export & Import JSON) -->
+                            <!-- 3. Payment method management -->
+                            <div class="pb-4 border-b border-slate-800">
+                                <div class="mb-3">
+                                    <p class="text-sm font-semibold text-white">付款方式管理</p>
+                                    <span class="text-xs text-slate-400">新增、修改或刪除支出交易可使用的付款方式</span>
+                                </div>
+                                <div id="setting-payment-methods-list" class="space-y-2 mb-3"></div>
+                                <form onsubmit="addPaymentMethod(event)" class="flex gap-2">
+                                    <input type="text" id="new-payment-method" maxlength="30" placeholder="新增付款方式" class="min-w-0 flex-1 px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+                                    <button type="submit" class="px-3.5 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-glow-blue transition">新增</button>
+                                </form>
+                            </div>
+
+                            <!-- 4. Expense subcategory management -->
+                            <div class="pb-4 border-b border-slate-800">
+                                <div class="mb-3">
+                                    <p class="text-sm font-semibold text-white">分類子分類管理</p>
+                                    <span class="text-xs text-slate-400">設定各支出分類底下的自訂子分類，會同步顯示在新增交易表單</span>
+                                </div>
+                                <div class="flex gap-2 mb-3">
+                                    <select id="setting-subcategory-parent" onchange="renderSubcategorySettingsUI()" class="min-w-0 flex-1 px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-brand-500"></select>
+                                </div>
+                                <div id="setting-subcategories-list" class="space-y-2 mb-3"></div>
+                                <form onsubmit="addSubcategory(event)" class="flex gap-2">
+                                    <input type="text" id="new-subcategory" maxlength="30" placeholder="新增子分類" class="min-w-0 flex-1 px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+                                    <button type="submit" class="px-3.5 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-glow-blue transition">新增</button>
+                                </form>
+                            </div>
+
+                            <!-- 5. Data Backup (Export & Import JSON) -->
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
                                 <div>
                                     <p class="text-sm font-semibold text-white">資料備份與匯入</p>
@@ -1026,7 +1055,7 @@
                                 </div>
                             </div>
 
-                            <!-- 4. Destructive Action: Clean Data with Confirmation Modal Trigger -->
+                            <!-- 6. Destructive Action: Clean Data with Confirmation Modal Trigger -->
                             <div class="flex items-center justify-between pt-2">
                                 <div>
                                     <p class="text-sm font-semibold text-rose-400">完全清空所有記帳資料</p>
@@ -1037,7 +1066,7 @@
                                 </button>
                             </div>
 
-                            <!-- 5. 新增：登入帳號狀態與登出 -->
+                            <!-- 7. 新增：登入帳號狀態與登出 -->
                             <div class="flex items-center justify-between pt-4 border-t border-slate-800">
                                 <div>
                                     <p class="text-sm font-semibold text-white">登入帳號</p>
@@ -1098,11 +1127,22 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1.5">分類 (與預算設定同步)</label>
-                        <select id="input-category" class="w-full px-3.5 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500"></select>
+                        <select id="input-category" onchange="renderSubcategoryOptions()" class="w-full px-3.5 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500"></select>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1.5">日期</label>
                         <input type="date" id="input-date" required class="w-full px-3.5 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div id="expense-detail-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">子分類 <span class="text-slate-500 font-normal">(選填)</span></label>
+                        <select id="input-subcategory" class="w-full px-3.5 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">付款方式</label>
+                        <select id="input-payment-method" class="w-full px-3.5 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500"></select>
                     </div>
                 </div>
 
@@ -1465,6 +1505,18 @@
         let expenseBudgets = JSON.parse(localStorage.getItem('pocketflow_expense_budgets')) || DEFAULT_EXPENSE_BUDGETS;
         let incomeBudgets = JSON.parse(localStorage.getItem('pocketflow_income_budgets')) || DEFAULT_INCOME_BUDGETS;
 
+        // Transaction detail preferences.  Stored separately so existing budget/category data remains compatible.
+        const DEFAULT_PAYMENT_METHODS = ['現金', '信用卡', 'Line Pay', '街口支付', '轉帳'];
+        const DEFAULT_EXPENSE_SUBCATEGORIES = { '食': ['早餐', '午餐', '晚餐'] };
+        let paymentMethods = JSON.parse(localStorage.getItem('pocketflow_payment_methods')) || [...DEFAULT_PAYMENT_METHODS];
+        let expenseSubcategories = JSON.parse(localStorage.getItem('pocketflow_expense_subcategories')) || { ...DEFAULT_EXPENSE_SUBCATEGORIES };
+
+        // Guard against malformed imported/local data without changing the existing data model.
+        if (!Array.isArray(paymentMethods) || paymentMethods.length === 0) paymentMethods = [...DEFAULT_PAYMENT_METHODS];
+        if (!expenseSubcategories || typeof expenseSubcategories !== 'object' || Array.isArray(expenseSubcategories)) {
+            expenseSubcategories = { ...DEFAULT_EXPENSE_SUBCATEGORIES };
+        }
+
         // Initialize App on DOM Load
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date();
@@ -1480,6 +1532,9 @@
 
             updateUserProfileUI();
             updateCurrencySymbolsUI();
+            renderPaymentMethodSettingsUI();
+            renderSubcategorySettingsUI();
+            setTransactionType('EXPENSE');
 
             renderStats();
             renderRecentTransactions();
@@ -1541,6 +1596,158 @@
             localStorage.setItem('pocketflow_currency', currentCurrency);
             updateCurrencySymbolsUI();
             showToast(`已成功切換偏好貨幣為 ${currentCurrency}`);
+        }
+
+        function escapeHTML(value) {
+            const div = document.createElement('div');
+            div.textContent = value == null ? '' : String(value);
+            return div.innerHTML;
+        }
+
+        function savePaymentMethods() {
+            localStorage.setItem('pocketflow_payment_methods', JSON.stringify(paymentMethods));
+        }
+
+        function renderPaymentMethodSettingsUI() {
+            const list = document.getElementById('setting-payment-methods-list');
+            if (!list) return;
+            list.innerHTML = paymentMethods.map((method, index) => `
+                <div class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl">
+                    <span class="text-xs font-semibold text-slate-200 truncate">${escapeHTML(method)}</span>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button type="button" onclick="editPaymentMethod(${index})" title="修改" class="w-7 h-7 text-xs text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" onclick="deletePaymentMethod(${index})" title="刪除" class="w-7 h-7 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-xs text-slate-500 py-2">尚未設定付款方式</p>';
+        }
+
+        function addPaymentMethod(event) {
+            event.preventDefault();
+            const input = document.getElementById('new-payment-method');
+            const method = input.value.trim();
+            if (!method) return;
+            if (paymentMethods.includes(method)) return showToast('此付款方式已存在', 'error');
+            paymentMethods.push(method);
+            savePaymentMethods();
+            input.value = '';
+            renderPaymentMethodSettingsUI();
+            renderPaymentMethodOptions();
+            showToast(`已新增付款方式「${method}」`);
+        }
+
+        function editPaymentMethod(index) {
+            const current = paymentMethods[index];
+            const method = window.prompt('修改付款方式', current);
+            if (method === null) return;
+            const value = method.trim();
+            if (!value) return showToast('付款方式不可為空白', 'error');
+            if (paymentMethods.some((item, i) => i !== index && item === value)) return showToast('此付款方式已存在', 'error');
+            paymentMethods[index] = value;
+            savePaymentMethods();
+            renderPaymentMethodSettingsUI();
+            renderPaymentMethodOptions();
+            showToast('已修改付款方式');
+        }
+
+        function deletePaymentMethod(index) {
+            if (!window.confirm(`確定要刪除付款方式「${paymentMethods[index]}」嗎？`)) return;
+            paymentMethods.splice(index, 1);
+            savePaymentMethods();
+            renderPaymentMethodSettingsUI();
+            renderPaymentMethodOptions();
+            showToast('已刪除付款方式');
+        }
+
+        function saveExpenseSubcategories() {
+            localStorage.setItem('pocketflow_expense_subcategories', JSON.stringify(expenseSubcategories));
+        }
+
+        function renderSubcategorySettingsUI() {
+            const parentSelect = document.getElementById('setting-subcategory-parent');
+            const list = document.getElementById('setting-subcategories-list');
+            if (!parentSelect || !list) return;
+            const selected = parentSelect.value;
+            parentSelect.innerHTML = Object.keys(expenseBudgets).map(category => `<option value="${escapeHTML(category)}">${getCategoryEmoji(category)} ${escapeHTML(category)}</option>`).join('');
+            if (selected && Object.prototype.hasOwnProperty.call(expenseBudgets, selected)) parentSelect.value = selected;
+            const parent = parentSelect.value;
+            const items = expenseSubcategories[parent] || [];
+            list.innerHTML = items.map((subcategory, index) => `
+                <div class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl">
+                    <span class="text-xs font-semibold text-slate-200 truncate">${escapeHTML(subcategory)}</span>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button type="button" onclick="editSubcategory(${index})" title="修改" class="w-7 h-7 text-xs text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" onclick="deleteSubcategory(${index})" title="刪除" class="w-7 h-7 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-xs text-slate-500 py-2">此分類尚無子分類</p>';
+        }
+
+        function getSelectedSubcategoryParent() {
+            const select = document.getElementById('setting-subcategory-parent');
+            return select ? select.value : '';
+        }
+
+        function addSubcategory(event) {
+            event.preventDefault();
+            const parent = getSelectedSubcategoryParent();
+            const input = document.getElementById('new-subcategory');
+            const value = input.value.trim();
+            if (!parent || !value) return;
+            const items = expenseSubcategories[parent] || [];
+            if (items.includes(value)) return showToast('此子分類已存在', 'error');
+            expenseSubcategories[parent] = [...items, value];
+            saveExpenseSubcategories();
+            input.value = '';
+            renderSubcategorySettingsUI();
+            renderSubcategoryOptions();
+            showToast(`已在「${parent}」新增子分類「${value}」`);
+        }
+
+        function editSubcategory(index) {
+            const parent = getSelectedSubcategoryParent();
+            const items = expenseSubcategories[parent] || [];
+            const value = window.prompt('修改子分類', items[index]);
+            if (value === null) return;
+            const next = value.trim();
+            if (!next) return showToast('子分類不可為空白', 'error');
+            if (items.some((item, i) => i !== index && item === next)) return showToast('此子分類已存在', 'error');
+            items[index] = next;
+            expenseSubcategories[parent] = items;
+            saveExpenseSubcategories();
+            renderSubcategorySettingsUI();
+            renderSubcategoryOptions();
+            showToast('已修改子分類');
+        }
+
+        function deleteSubcategory(index) {
+            const parent = getSelectedSubcategoryParent();
+            const items = expenseSubcategories[parent] || [];
+            if (!window.confirm(`確定要刪除子分類「${items[index]}」嗎？`)) return;
+            items.splice(index, 1);
+            expenseSubcategories[parent] = items;
+            saveExpenseSubcategories();
+            renderSubcategorySettingsUI();
+            renderSubcategoryOptions();
+            showToast('已刪除子分類');
+        }
+
+        function renderPaymentMethodOptions() {
+            const select = document.getElementById('input-payment-method');
+            if (!select) return;
+            const selected = select.value;
+            select.innerHTML = paymentMethods.map(method => `<option value="${escapeHTML(method)}">${escapeHTML(method)}</option>`).join('');
+            if (selected && paymentMethods.includes(selected)) select.value = selected;
+        }
+
+        function renderSubcategoryOptions() {
+            const categorySelect = document.getElementById('input-category');
+            const subcategorySelect = document.getElementById('input-subcategory');
+            if (!categorySelect || !subcategorySelect) return;
+            const selected = subcategorySelect.value;
+            const items = currentType === 'EXPENSE' ? (expenseSubcategories[categorySelect.value] || []) : [];
+            subcategorySelect.innerHTML = '<option value="">不指定</option>' + items.map(item => `<option value="${escapeHTML(item)}">${escapeHTML(item)}</option>`).join('');
+            if (selected && items.includes(selected)) subcategorySelect.value = selected;
         }
 
         // Toggle Sidebar Mobile
@@ -1799,7 +2006,9 @@
 
             if (type === 'EXPENSE') {
                 expenseBudgets[name] = limit;
+                if (!Array.isArray(expenseSubcategories[name])) expenseSubcategories[name] = [];
                 localStorage.setItem('pocketflow_expense_budgets', JSON.stringify(expenseBudgets));
+                saveExpenseSubcategories();
             } else {
                 incomeBudgets[name] = limit;
                 localStorage.setItem('pocketflow_income_budgets', JSON.stringify(incomeBudgets));
@@ -1808,6 +2017,7 @@
             renderBudgets();
             updateCharts();
             setTransactionType(currentType);
+            renderSubcategorySettingsUI();
             closeAddCategoryModal();
             document.getElementById('new-cat-name').value = '';
             showToast(`已成功新增分類「${name}」！`);
@@ -1816,7 +2026,9 @@
         function deleteCategory(type, cat) {
             if (type === 'EXPENSE') {
                 delete expenseBudgets[cat];
+                delete expenseSubcategories[cat];
                 localStorage.setItem('pocketflow_expense_budgets', JSON.stringify(expenseBudgets));
+                saveExpenseSubcategories();
             } else {
                 delete incomeBudgets[cat];
                 localStorage.setItem('pocketflow_income_budgets', JSON.stringify(incomeBudgets));
@@ -1825,6 +2037,7 @@
             renderBudgets();
             updateCharts();
             setTransactionType(currentType);
+            renderSubcategorySettingsUI();
             showToast(`已移除分類「${cat}」`);
         }
 
@@ -1852,6 +2065,8 @@
                 transactions,
                 expenseBudgets,
                 incomeBudgets,
+                paymentMethods,
+                expenseSubcategories,
                 savedGoalAmount,
                 targetGoalAmount,
                 goalTitle,
@@ -1892,6 +2107,15 @@
                         incomeBudgets = data.incomeBudgets;
                         localStorage.setItem('pocketflow_income_budgets', JSON.stringify(incomeBudgets));
                     }
+                    if (Array.isArray(data.paymentMethods)) {
+                        paymentMethods = data.paymentMethods.filter(method => typeof method === 'string' && method.trim());
+                        if (paymentMethods.length === 0) paymentMethods = [...DEFAULT_PAYMENT_METHODS];
+                        savePaymentMethods();
+                    }
+                    if (data.expenseSubcategories && typeof data.expenseSubcategories === 'object' && !Array.isArray(data.expenseSubcategories)) {
+                        expenseSubcategories = data.expenseSubcategories;
+                        saveExpenseSubcategories();
+                    }
                     if (data.savedGoalAmount !== undefined) {
                         savedGoalAmount = parseFloat(data.savedGoalAmount);
                         localStorage.setItem('pocketflow_goal_saved', savedGoalAmount);
@@ -1915,6 +2139,9 @@
 
                     updateUserProfileUI();
                     updateCurrencySymbolsUI();
+                    renderPaymentMethodSettingsUI();
+                    renderSubcategorySettingsUI();
+                    setTransactionType(currentType);
                     renderStats();
                     renderRecentTransactions();
                     renderFullTransactions();
@@ -1937,8 +2164,11 @@
             const btnExpense = document.getElementById('btn-type-expense');
             const btnIncome = document.getElementById('btn-type-income');
             const categorySelect = document.getElementById('input-category');
+            const expenseDetailFields = document.getElementById('expense-detail-fields');
 
             if (!categorySelect) return;
+
+            if (expenseDetailFields) expenseDetailFields.classList.toggle('hidden', type !== 'EXPENSE');
 
             if (type === 'EXPENSE') {
                 btnExpense.className = "py-2.5 text-xs font-bold rounded-xl bg-rose-600 text-white shadow-md transition-all flex items-center justify-center gap-2";
@@ -1957,6 +2187,9 @@
                     <option value="${cat}">${getCategoryEmoji(cat)} ${cat}</option>
                 `).join('');
             }
+
+            renderSubcategoryOptions();
+            renderPaymentMethodOptions();
         }
 
         function getCategoryEmoji(cat) {
@@ -1978,6 +2211,8 @@
             e.preventDefault();
             const amount = parseFloat(document.getElementById('input-amount').value);
             const category = document.getElementById('input-category').value;
+            const subcategory = currentType === 'EXPENSE' ? document.getElementById('input-subcategory').value : '';
+            const paymentMethod = currentType === 'EXPENSE' ? document.getElementById('input-payment-method').value : '';
             const title = document.getElementById('input-title').value.trim();
             const date = document.getElementById('input-date').value;
 
@@ -2000,6 +2235,8 @@
                 amount,
                 type: currentType,
                 category,
+                subcategory,
+                paymentMethod,
                 date: date
             };
 
@@ -2143,6 +2380,13 @@
             }
         }
 
+        function getTransactionDetailText(transaction) {
+            const details = [transaction.date, transaction.category];
+            if (transaction.type === 'EXPENSE' && transaction.subcategory) details.push(transaction.subcategory);
+            if (transaction.type === 'EXPENSE' && transaction.paymentMethod) details.push(transaction.paymentMethod);
+            return details.map(escapeHTML).join(' • ');
+        }
+
         function renderRecentTransactions() {
             const container = document.getElementById('recent-transactions-list');
             const recent = transactions.slice(0, 5);
@@ -2177,7 +2421,7 @@
                             </div>
                             <div>
                                 <h4 class="text-sm font-bold text-white">${t.title}</h4>
-                                <span class="text-[11px] text-slate-400">${t.date} • ${t.category}</span>
+                                <span class="text-[11px] text-slate-400">${getTransactionDetailText(t)}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -2216,7 +2460,7 @@
                             </div>
                             <div>
                                 <h4 class="text-sm font-bold text-white">${t.title}</h4>
-                                <span class="text-xs text-slate-400">${t.date} • ${t.category}</span>
+                                <span class="text-xs text-slate-400">${getTransactionDetailText(t)}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-4">
@@ -2251,7 +2495,11 @@
                 return;
             }
 
-            const filtered = transactions.filter(t => t.title.toLowerCase().includes(q) || t.category.includes(q) || t.amount.toString().includes(q));
+            const filtered = transactions.filter(t =>
+                t.title.toLowerCase().includes(q) || t.category.includes(q) ||
+                (t.subcategory || '').toLowerCase().includes(q) ||
+                (t.paymentMethod || '').toLowerCase().includes(q) || t.amount.toString().includes(q)
+            );
             
             const container = document.getElementById('recent-transactions-list');
             if (filtered.length === 0) {
@@ -2268,7 +2516,7 @@
                                 </div>
                                 <div>
                                     <h4 class="text-sm font-bold text-white">${t.title}</h4>
-                                    <span class="text-[11px] text-slate-400">${t.date} • ${t.category}</span>
+                                    <span class="text-[11px] text-slate-400">${getTransactionDetailText(t)}</span>
                                 </div>
                             </div>
                             <span class="text-sm font-extrabold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">${isIncome ? '+' : '-'}${currentCurrency} ${t.amount.toLocaleString()}</span>
@@ -2909,8 +3157,11 @@
             localStorage.removeItem('pocketflow_goal_title');
             localStorage.removeItem('pocketflow_expense_budgets');
             localStorage.removeItem('pocketflow_income_budgets');
+            localStorage.removeItem('pocketflow_payment_methods');
+            localStorage.removeItem('pocketflow_expense_subcategories');
             localStorage.removeItem('pocketflow_currency');
             localStorage.removeItem('pocketflow_username');
+            localStorage.removeItem('pocketflow_last_login');
 
             transactions = [];
             savedGoalAmount = 0;
@@ -2918,11 +3169,15 @@
             goalTitle = '個人儲蓄目標';
             expenseBudgets = { ...DEFAULT_EXPENSE_BUDGETS };
             incomeBudgets = { ...DEFAULT_INCOME_BUDGETS };
+            paymentMethods = [...DEFAULT_PAYMENT_METHODS];
+            expenseSubcategories = { ...DEFAULT_EXPENSE_SUBCATEGORIES };
             currentCurrency = 'NT$';
             currentUsername = 'User';
 
             updateUserProfileUI();
             updateCurrencySymbolsUI();
+            renderPaymentMethodSettingsUI();
+            renderSubcategorySettingsUI();
             renderStats();
             renderRecentTransactions();
             renderFullTransactions();
@@ -2943,6 +3198,12 @@
         const LOGIN_API_URL = "https://script.google.com/macros/s/AKfycbw6oSAmAtzIRN40b4ruORk8lNxYdrGHegssz_oI-t9-X4QRv5hukF2Jg9AFUSxBIHTy/exec";
         // 用來儲存「記住我」登入狀態的 localStorage key
         const LOGIN_STORAGE_KEY = "pocketflow_logged_in_user";
+
+        // 格式：2026-07-24 20:35:42（使用使用者目前裝置的本地時間）
+        function formatLastLogin(date = new Date()) {
+            const pad = value => String(value).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        }
 
         // 這裡使用獨立的 DOMContentLoaded 監聽器，不會動到你原本的初始化程式碼
         document.addEventListener('DOMContentLoaded', () => {
@@ -3017,13 +3278,15 @@
             submitText.innerText = '登入中...';
             submitSpinner.classList.remove('hidden');
 
+            const lastLogin = formatLastLogin();
             fetch(LOGIN_API_URL, {
                 method: 'POST',
-                body: JSON.stringify({ username: username, password: password })
+                body: JSON.stringify({ username: username, password: password, lastLogin: lastLogin })
             })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
+                        localStorage.setItem('pocketflow_last_login', lastLogin);
                         // 登入成功
                         if (rememberMe && rememberMe.checked) {
                             localStorage.setItem(LOGIN_STORAGE_KEY, data.username || username);
