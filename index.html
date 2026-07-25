@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PocketFlow - 商業級個人財務記帳儀表板</title>
+    <title>PocketFlow - 商業級個人財務記帳首頁</title>
     <meta name="description" content="PocketFlow - 現代化 SaaS 風格個人財務記帳與 AI 分析平台">
     
     <!-- Google Fonts: Plus Jakarta Sans -->
@@ -190,6 +190,14 @@
         #login-overlay.login-fade-out {
             animation: loginFadeOut 0.35s ease forwards;
             pointer-events: none;
+        }
+
+        /* 已勾選「記住我」時，在驗證工作階段期間顯示同步畫面，避免登入表單閃現。 */
+        #login-overlay.login-restoring > div:not(#session-restore-loader) {
+            visibility: hidden;
+        }
+        #login-overlay.login-restoring #session-restore-loader {
+            display: flex;
         }
 
         @keyframes loginFadeOut {
@@ -447,8 +455,30 @@
 
             </div>
         </div>
+        <div id="session-restore-loader" class="hidden absolute inset-0 z-10 flex-col items-center justify-center gap-4 bg-darkBg">
+            <div class="w-12 h-12 rounded-2xl bg-brand-600/15 text-brand-400 flex items-center justify-center text-xl border border-brand-500/25">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+            </div>
+            <div class="text-center">
+                <p class="text-sm font-bold text-slate-100">正在同步你的資料</p>
+                <p class="mt-1 text-xs text-slate-500">請稍候…</p>
+            </div>
+        </div>
     </div>
     <!-- ===== 登入畫面結束 ===== -->
+
+    <script>
+        // 在主程式載入前先切換為同步畫面，避免「記住我」使用者看到登入頁閃一下。
+        (function() {
+            try {
+                var rememberedUser = localStorage.getItem('pocketflow_logged_in_user');
+                var rememberedToken = localStorage.getItem('pocketflow_remember_token');
+                if (rememberedUser && rememberedToken) {
+                    document.getElementById('login-overlay').classList.add('login-restoring');
+                }
+            } catch (error) { /* localStorage 不可用時維持一般登入畫面 */ }
+        })();
+    </script>
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
@@ -473,9 +503,9 @@
 
                 <!-- Navigation Menu -->
                 <nav class="p-4 space-y-1.5">
-                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-white bg-brand-600/90 shadow-glow-blue transition-all">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-white bg-brand-600/90 shadow-glow-blue hover:text-slate-100 hover:bg-slate-800/50 transition-all">
                         <i class="fa-solid fa-chart-pie w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
-                        Dashboard (儀表板)
+                        Homepage (首頁)
                     </button>
                     
                     <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-item flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all">
@@ -501,6 +531,10 @@
                     <button onclick="switchTab('settings')" id="nav-settings" class="nav-item flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all">
                         <i class="fa-solid fa-gear w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
                         Settings (系統設定)
+                    </button>
+                    <button onclick="switchTab('admin')" id="nav-admin" class="nav-item hidden flex items-center w-full px-4 py-3 text-sm font-semibold rounded-2xl text-amber-300 hover:text-amber-100 hover:bg-amber-500/10 transition-all">
+                        <i class="fa-solid fa-shield-halved w-5 h-5 mr-3 text-base flex items-center justify-center"></i>
+                        Admin System (管理員系統)
                     </button>
                 </nav>
             </div>
@@ -536,7 +570,7 @@
                     <!-- Search Bar -->
                     <div class="relative hidden sm:block w-72">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="text" id="global-search" onkeyup="handleSearch(this.value)" placeholder="搜尋交易紀錄、商家或金額..." class="w-full pl-10 pr-4 py-2.5 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                        <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="搜尋交易紀錄、商家或金額..." class="w-full pl-10 pr-4 py-2.5 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
                     </div>
                 </div>
 
@@ -578,7 +612,7 @@
                         </div>
                         <div class="hidden sm:block text-left">
                             <h4 class="text-sm font-bold text-white leading-tight" id="header-user-name">User</h4>
-                            <span class="text-[11px] font-medium text-slate-400">VIP Member</span>
+                            <span id="header-user-role" class="text-[11px] font-medium text-slate-400">VIP Member</span>
                         </div>
                     </div>
                 </div>
@@ -952,6 +986,57 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- ADMIN SYSTEM: only rendered for Manager, Admin and Owner -->
+                <div id="view-admin" class="hidden space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/20 flex items-center justify-center text-xs"><i class="fa-solid fa-shield-halved"></i></span>
+                                <h2 class="text-2xl font-bold text-white">管理員系統</h2>
+                            </div>
+                            <p class="text-xs text-slate-400">會員、交易、公告與重要系統操作的管理中心</p>
+                        </div>
+                        <button onclick="loadAdminSystem()" class="px-4 py-2.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700/50 transition flex items-center justify-center gap-2"><i class="fa-solid fa-rotate"></i> 重新整理</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                        <div class="glass-card p-5 border border-slate-800"><p class="text-xs text-slate-400">總會員數</p><p id="admin-total-members" class="mt-2 text-2xl font-extrabold text-white">—</p></div>
+                        <div class="glass-card p-5 border border-slate-800"><p class="text-xs text-slate-400">管理員數</p><p id="admin-administrators" class="mt-2 text-2xl font-extrabold text-amber-300">—</p></div>
+                        <div class="glass-card p-5 border border-slate-800"><p class="text-xs text-slate-400">今日新增會員</p><p id="admin-today-members" class="mt-2 text-2xl font-extrabold text-emerald-400">—</p></div>
+                        <div class="glass-card p-5 border border-slate-800"><p class="text-xs text-slate-400">總交易筆數</p><p id="admin-transaction-count" class="mt-2 text-2xl font-extrabold text-brand-400">—</p></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="glass-card p-6 xl:col-span-2 border border-slate-800">
+                            <div class="flex items-center justify-between mb-5"><div><h3 class="text-base font-bold text-white">交易統計</h3><p class="text-xs text-slate-500 mt-1">全部會員的雲端記帳資料彙總</p></div><i class="fa-solid fa-chart-column text-brand-400"></i></div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/15"><p class="text-[11px] text-slate-400">總收入</p><p id="admin-total-income" class="mt-1 text-sm font-bold text-emerald-400">—</p></div>
+                                <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/15"><p class="text-[11px] text-slate-400">總支出</p><p id="admin-total-expense" class="mt-1 text-sm font-bold text-rose-400">—</p></div>
+                                <div class="p-3 rounded-xl bg-brand-500/10 border border-brand-500/15"><p class="text-[11px] text-slate-400">交易筆數</p><p id="admin-total-transactions" class="mt-1 text-sm font-bold text-brand-300">—</p></div>
+                                <div class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/15"><p class="text-[11px] text-slate-400">今日交易</p><p id="admin-today-transactions" class="mt-1 text-sm font-bold text-purple-300">—</p></div>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 border border-slate-800"><h3 class="text-base font-bold text-white">身分群組</h3><p class="text-xs text-slate-500 mt-1 mb-4">Identity Group 分布</p><div id="admin-role-counts" class="space-y-3"></div></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <section class="glass-card p-6 xl:col-span-2 border border-slate-800">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5"><div><h3 class="text-base font-bold text-white">使用者管理</h3><p class="text-xs text-slate-500 mt-1">查看基本資訊、最後登入與交易資料；調整身分需再次確認。</p></div><input id="admin-user-search" oninput="filterAdminUsers(this.value)" placeholder="搜尋帳號或身分..." class="w-full sm:w-52 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"></div>
+                            <div class="overflow-x-auto"><table class="w-full min-w-[720px] text-left"><thead class="text-[11px] text-slate-500 border-b border-slate-800"><tr><th class="pb-3 font-medium">會員</th><th class="pb-3 font-medium">身分</th><th class="pb-3 font-medium">最後登入</th><th class="pb-3 font-medium">交易</th><th class="pb-3 font-medium">操作</th></tr></thead><tbody id="admin-users-list" class="text-xs"></tbody></table></div>
+                        </section>
+                        <section class="glass-card p-6 border border-slate-800">
+                            <div class="flex items-center gap-2 mb-1"><i class="fa-solid fa-bullhorn text-amber-300"></i><h3 class="text-base font-bold text-white">系統公告</h3></div>
+                            <p class="text-xs text-slate-500 mt-1 mb-4">發布後會在所有會員登入時通知。</p>
+                            <form onsubmit="publishAnnouncement(event)" class="space-y-3"><input id="admin-announcement-title" maxlength="100" required placeholder="公告標題" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"><textarea id="admin-announcement-message" maxlength="1000" required rows="5" placeholder="公告內容" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 resize-none"></textarea><button type="submit" class="w-full py-2.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition"><i class="fa-solid fa-paper-plane mr-1.5"></i> 發布公告</button></form>
+                        </section>
+                    </div>
+
+                    <section class="glass-card p-6 border border-slate-800">
+                        <div class="mb-5"><h3 class="text-base font-bold text-white">系統操作紀錄</h3><p class="text-xs text-slate-500 mt-1">保留重要管理操作，協助追蹤系統異動。</p></div>
+                        <div class="overflow-x-auto"><table class="w-full min-w-[680px] text-left"><thead class="text-[11px] text-slate-500 border-b border-slate-800"><tr><th class="pb-3 font-medium">時間</th><th class="pb-3 font-medium">操作者</th><th class="pb-3 font-medium">操作</th><th class="pb-3 font-medium">目標</th><th class="pb-3 font-medium">內容</th></tr></thead><tbody id="admin-logs-list" class="text-xs"></tbody></table></div>
+                    </section>
                 </div>
 
                 <!-- VIEW 6: FULLY UPGRADED SETTINGS TAB -->
@@ -1363,6 +1448,7 @@
                     localStorage.setItem('pocketflow_username', currentUsername);
                     cloudSessionToken = result.token || '';
                     if (!cloudSessionToken) throw new Error('登入服務尚未啟用資料同步');
+                    setIdentityGroup(result.identityGroup);
                     sessionStorage.setItem('pocketflow_session_token', cloudSessionToken);
                     if (rememberMe.checked) {
                         localStorage.setItem('pocketflow_logged_in_user', currentUsername);
@@ -1372,6 +1458,8 @@
                         localStorage.removeItem('pocketflow_remember_token');
                     }
                     await loadCloudData();
+                    switchTab('dashboard');
+                    loadAnnouncements();
                     updateUserProfileUI();
                     renderLoginAccountSettingUI();
                     const overlay = document.getElementById('login-overlay');
@@ -1464,12 +1552,20 @@
             cloudSessionToken = '';
             cloudAccountUsername = '';
             cloudDataLoaded = false;
+            setIdentityGroup('Member');
+            cloudSyncQueued = false;
+            if (cloudSyncTimer) {
+                clearTimeout(cloudSyncTimer);
+                cloudSyncTimer = null;
+            }
             showToast("已成功登出系統", "info");
             const overlay = document.getElementById('login-overlay');
             overlay.style.display = 'grid';
+            overlay.classList.remove('login-restoring', 'login-fade-out');
             switchAuthMode('login');
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
+            switchTab('dashboard');
         }
 
         function renderLoginAccountSettingUI() {
@@ -1537,6 +1633,10 @@
         ]);
         let cloudSessionToken = sessionStorage.getItem('pocketflow_session_token') || '';
         let cloudAccountUsername = '';
+        let currentIdentityGroup = 'Member';
+        let adminUsers = [];
+        const IDENTITY_ROLE_RANK = { Member: 10, Manager: 20, Admin: 30, Owner: 40 };
+        const IDENTITY_ROLE_LABELS = { Member: 'VIP Member', Manager: 'Manager', Admin: 'Administrator', Owner: 'Owner' };
         let mayMigrateLocalData = false;
         let cloudDataLoaded = false;
         let applyingCloudData = false;
@@ -1622,6 +1722,7 @@
 
         async function loadCloudData() {
             const result = await cloudRequest('loadData');
+            setIdentityGroup(result.identityGroup);
             cloudDataLoaded = true;
             if (result.data) {
                 applyCloudSnapshot(result.data);
@@ -1647,11 +1748,13 @@
 
             try {
                 await loadCloudData();
+                switchTab('dashboard');
+                loadAnnouncements();
                 const overlay = document.getElementById('login-overlay');
                 overlay.classList.add('login-fade-out');
                 setTimeout(() => {
                     overlay.style.display = 'none';
-                    overlay.classList.remove('login-fade-out');
+                    overlay.classList.remove('login-restoring', 'login-fade-out');
                 }, 350);
                 renderLoginAccountSettingUI();
             } catch (error) {
@@ -1661,6 +1764,8 @@
                 cloudSessionToken = '';
                 cloudAccountUsername = '';
                 cloudDataLoaded = false;
+                setIdentityGroup('Member');
+                document.getElementById('login-overlay').classList.remove('login-restoring');
             }
         }
 
@@ -1756,6 +1861,154 @@
                 }
             });
         });
+
+        // ===================== IDENTITY GROUP & ADMIN SYSTEM =====================
+        // All sensitive operations are also authorized again by Apps Script; these helpers
+        // only control the client experience and keep future permission checks centralized.
+        function normalizeIdentityGroup(role) {
+            return IDENTITY_ROLE_RANK[role] ? role : 'Member';
+        }
+
+        function canAccessAdmin() {
+            return (IDENTITY_ROLE_RANK[currentIdentityGroup] || 0) >= IDENTITY_ROLE_RANK.Manager;
+        }
+
+        function setIdentityGroup(role) {
+            currentIdentityGroup = normalizeIdentityGroup(role);
+            const roleEl = document.getElementById('header-user-role');
+            if (roleEl) roleEl.innerText = IDENTITY_ROLE_LABELS[currentIdentityGroup];
+            const adminNav = document.getElementById('nav-admin');
+            if (adminNav) adminNav.classList.toggle('hidden', !canAccessAdmin());
+        }
+
+        function formatAdminDate(value) {
+            if (!value) return '—';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return String(value);
+            return date.toLocaleString('zh-TW', { hour12: false });
+        }
+
+        function adminCurrency(value) {
+            return `${currentCurrency} ${Number(value || 0).toLocaleString()}`;
+        }
+
+        async function loadAnnouncements() {
+            if (!cloudSessionToken) return;
+            try {
+                const result = await cloudRequest('getAnnouncements');
+                (result.announcements || []).forEach(item => {
+                    pushNotification(`系統公告：${item.title}`, item.message);
+                });
+            } catch (error) {
+                console.warn('Unable to load system announcements:', error);
+            }
+        }
+
+        async function loadAdminSystem() {
+            if (!canAccessAdmin() || !cloudSessionToken) return;
+            const userList = document.getElementById('admin-users-list');
+            if (userList && !adminUsers.length) userList.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-500">正在讀取會員資料…</td></tr>';
+            try {
+                const [overviewResult, usersResult, logsResult] = await Promise.all([
+                    cloudRequest('adminOverview'), cloudRequest('adminUsers'), cloudRequest('adminLogs')
+                ]);
+                renderAdminOverview(overviewResult.overview || {});
+                adminUsers = usersResult.users || [];
+                renderAdminUsers(adminUsers);
+                renderAdminLogs(logsResult.logs || []);
+            } catch (error) {
+                console.error('Admin system load failed:', error);
+                showToast(error.message || '管理資料讀取失敗', 'error');
+            }
+        }
+
+        function renderAdminOverview(overview) {
+            const stats = overview.transactionStats || {};
+            const values = {
+                'admin-total-members': overview.totalMembers,
+                'admin-administrators': overview.administrators,
+                'admin-today-members': overview.todayNewMembers,
+                'admin-transaction-count': stats.transactionCount,
+                'admin-total-income': adminCurrency(stats.totalIncome),
+                'admin-total-expense': adminCurrency(stats.totalExpense),
+                'admin-total-transactions': Number(stats.transactionCount || 0).toLocaleString(),
+                'admin-today-transactions': Number(stats.todayTransactionCount || 0).toLocaleString()
+            };
+            Object.entries(values).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = value == null ? '0' : Number.isFinite(value) ? Number(value).toLocaleString() : value;
+            });
+            const roleCounts = overview.roleCounts || {};
+            const countEl = document.getElementById('admin-role-counts');
+            if (countEl) countEl.innerHTML = Object.keys(IDENTITY_ROLE_RANK).reverse().map(role => `
+                <div class="flex items-center justify-between text-xs"><span class="text-slate-400">${IDENTITY_ROLE_LABELS[role]}</span><span class="font-bold text-white">${Number(roleCounts[role] || 0)}</span></div>
+            `).join('');
+        }
+
+        function renderAdminUsers(users) {
+            const container = document.getElementById('admin-users-list');
+            if (!container) return;
+            if (!users.length) {
+                container.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-500">沒有符合條件的會員</td></tr>';
+                return;
+            }
+            container.innerHTML = users.map((user, index) => {
+                const originalIndex = adminUsers.findIndex(item => item.username === user.username);
+                const canManage = Boolean(user.canManage);
+                const options = Object.keys(IDENTITY_ROLE_RANK).map(role => `<option value="${role}" ${role === user.role ? 'selected' : ''} ${IDENTITY_ROLE_RANK[role] >= IDENTITY_ROLE_RANK[currentIdentityGroup] ? 'disabled' : ''}>${IDENTITY_ROLE_LABELS[role]}</option>`).join('');
+                return `<tr class="border-b border-slate-800/70 last:border-0"><td class="py-3 pr-3"><p class="font-semibold text-slate-200">${escapeHTML(user.username)}</p><span class="text-[10px] text-slate-500">註冊：${formatAdminDate(user.createdAt)}</span></td><td class="py-3 pr-3"><span class="px-2 py-1 rounded-lg bg-slate-800 text-slate-300">${IDENTITY_ROLE_LABELS[user.role] || 'VIP Member'}</span></td><td class="py-3 pr-3 text-slate-400">${formatAdminDate(user.lastLogin)}</td><td class="py-3 pr-3 text-slate-400">${Number(user.transactionCount || 0).toLocaleString()} 筆</td><td class="py-3"><div class="flex items-center gap-2"><select id="admin-role-${originalIndex}" ${canManage ? '' : 'disabled'} class="px-2 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-[11px] text-slate-200 disabled:opacity-40">${options}</select><button onclick="updateAdminUserRole(${originalIndex})" ${canManage ? '' : 'disabled'} class="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-bold disabled:opacity-40">更新</button></div></td></tr>`;
+            }).join('');
+        }
+
+        function filterAdminUsers(query) {
+            const normalized = String(query || '').trim().toLowerCase();
+            renderAdminUsers(adminUsers.filter(user => !normalized || user.username.toLowerCase().includes(normalized) || user.role.toLowerCase().includes(normalized)));
+        }
+
+        async function updateAdminUserRole(index) {
+            const user = adminUsers[index];
+            const select = document.getElementById(`admin-role-${index}`);
+            if (!user || !select || user.role === select.value) return;
+            if (!confirm(`確定要將「${user.username}」的身分由 ${IDENTITY_ROLE_LABELS[user.role]} 改為 ${IDENTITY_ROLE_LABELS[select.value]} 嗎？此操作會記錄在系統操作紀錄。`)) {
+                select.value = user.role;
+                return;
+            }
+            try {
+                await cloudRequest('adminUpdateIdentityGroup', { username: user.username, identityGroup: select.value });
+                showToast('會員身分已更新');
+                await loadAdminSystem();
+            } catch (error) {
+                select.value = user.role;
+                showToast(error.message || '更新會員身分失敗', 'error');
+            }
+        }
+
+        async function publishAnnouncement(event) {
+            event.preventDefault();
+            const title = document.getElementById('admin-announcement-title').value.trim();
+            const message = document.getElementById('admin-announcement-message').value.trim();
+            if (!title || !message) return;
+            if (!confirm('確定要發布這則公告給所有會員嗎？公告發布後會在會員登入時顯示。')) return;
+            try {
+                await cloudRequest('adminPublishAnnouncement', { title, message });
+                document.getElementById('admin-announcement-title').value = '';
+                document.getElementById('admin-announcement-message').value = '';
+                showToast('系統公告已發布');
+                await loadAdminSystem();
+            } catch (error) {
+                showToast(error.message || '發布公告失敗', 'error');
+            }
+        }
+
+        function renderAdminLogs(logs) {
+            const container = document.getElementById('admin-logs-list');
+            if (!container) return;
+            if (!logs.length) {
+                container.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-500">尚無管理操作紀錄</td></tr>';
+                return;
+            }
+            container.innerHTML = logs.map(log => `<tr class="border-b border-slate-800/70 last:border-0"><td class="py-3 pr-3 text-slate-400">${formatAdminDate(log.createdAt)}</td><td class="py-3 pr-3 font-semibold text-slate-200">${escapeHTML(log.operator)}</td><td class="py-3 pr-3 text-brand-300">${escapeHTML(log.action)}</td><td class="py-3 pr-3 text-slate-300">${escapeHTML(log.target)}</td><td class="py-3 text-slate-400">${escapeHTML(log.detail)}</td></tr>`).join('');
+        }
 
         // User Profile & Currency Preference Functions
         function updateUserProfileUI() {
@@ -1962,7 +2215,11 @@
 
         // Switch View Tabs
         function switchTab(tabName) {
-            const views = ['dashboard', 'transactions', 'analytics', 'budgets', 'goals', 'settings'];
+            if (tabName === 'admin' && !canAccessAdmin()) {
+                showToast('你沒有使用管理員系統的權限', 'error');
+                return;
+            }
+            const views = ['dashboard', 'transactions', 'analytics', 'budgets', 'goals', 'settings', 'admin'];
             views.forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 const nav = document.getElementById(`nav-${v}`);
@@ -1983,6 +2240,7 @@
 
             if (tabName === 'analytics') renderAnalytics();
             if (tabName === 'budgets') renderBudgets();
+            if (tabName === 'admin') loadAdminSystem();
 
             const sidebar = document.getElementById('sidebar');
             if (!sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
@@ -2677,57 +2935,49 @@
         }
 
         function applyFilters() {
-            const cat = document.getElementById('filter-category').value;
-            if (cat === 'ALL') {
-                renderFullTransactions(transactions);
-            } else if (cat === 'INCOME') {
-                const filtered = transactions.filter(t => t.type === 'INCOME');
-                renderFullTransactions(filtered);
-            } else {
-                const filtered = transactions.filter(t => t.category === cat && t.type === 'EXPENSE');
-                renderFullTransactions(filtered);
-            }
+            renderFullTransactions(getFilteredTransactions());
+        }
+
+        function normalizeSearchValue(value) {
+            return String(value ?? '').toLocaleLowerCase().trim();
+        }
+
+        function getFilteredTransactions() {
+            const searchInput = document.getElementById('global-search');
+            const categoryInput = document.getElementById('filter-category');
+            const query = normalizeSearchValue(searchInput ? searchInput.value : '');
+            const category = categoryInput ? categoryInput.value : 'ALL';
+
+            return transactions.filter(transaction => {
+                const matchesCategory = category === 'ALL'
+                    || (category === 'INCOME' && transaction.type === 'INCOME')
+                    || (transaction.type === 'EXPENSE' && transaction.category === category);
+                if (!matchesCategory) return false;
+                if (!query) return true;
+
+                const searchableValues = [
+                    transaction.title,
+                    transaction.category,
+                    transaction.subcategory,
+                    transaction.paymentMethod,
+                    transaction.amount,
+                    transaction.date,
+                    transaction.type === 'INCOME' ? '收入 income' : '支出 expense'
+                ];
+                return searchableValues.some(value => normalizeSearchValue(value).includes(query));
+            });
         }
 
         function handleSearch(query) {
-            const q = query.toLowerCase().trim();
-            if (!q) {
-                renderRecentTransactions();
-                applyFilters();
-                return;
-            }
+            const hasQuery = normalizeSearchValue(query).length > 0;
+            applyFilters();
 
-            const filtered = transactions.filter(t =>
-                t.title.toLowerCase().includes(q) || t.category.includes(q) ||
-                (t.subcategory || '').toLowerCase().includes(q) ||
-                (t.paymentMethod || '').toLowerCase().includes(q) || t.amount.toString().includes(q)
-            );
-            
-            const container = document.getElementById('recent-transactions-list');
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">未搜尋到相關交易內容</p>`;
+            if (hasQuery) {
+                // 搜尋結果完整顯示於交易紀錄頁，避免只更新隱藏的首頁清單。
+                switchTab('transactions');
             } else {
-                container.innerHTML = filtered.slice(0, 5).map(t => {
-                    const meta = getCategoryMeta(t.category, t.type);
-                    const isIncome = t.type === 'INCOME';
-                    return `
-                        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800">
-                            <div class="flex items-center gap-3.5">
-                                <div class="w-10 h-10 rounded-2xl ${meta.bg} ${meta.text} flex items-center justify-center text-sm">
-                                    <i class="${meta.icon}"></i>
-                                </div>
-                                <div>
-                                    <h4 class="text-sm font-bold text-white">${t.title}</h4>
-                                    <span class="text-[11px] text-slate-400">${getTransactionDetailText(t)}</span>
-                                </div>
-                            </div>
-                            <span class="text-sm font-extrabold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">${isIncome ? '+' : '-'}${currentCurrency} ${t.amount.toLocaleString()}</span>
-                        </div>
-                    `;
-                }).join('');
+                renderRecentTransactions();
             }
-
-            renderFullTransactions(filtered);
         }
 
         // ─── COMBO CHART DATA ENGINE (EXACT MATCH FOR USER EXCEL IMAGE SPEC) ───────
