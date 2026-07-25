@@ -1364,8 +1364,13 @@
                     cloudSessionToken = result.token || '';
                     if (!cloudSessionToken) throw new Error('登入服務尚未啟用資料同步');
                     sessionStorage.setItem('pocketflow_session_token', cloudSessionToken);
-                    if (rememberMe.checked) localStorage.setItem('pocketflow_logged_in_user', currentUsername);
-                    else localStorage.removeItem('pocketflow_logged_in_user');
+                    if (rememberMe.checked) {
+                        localStorage.setItem('pocketflow_logged_in_user', currentUsername);
+                        localStorage.setItem('pocketflow_remember_token', cloudSessionToken);
+                    } else {
+                        localStorage.removeItem('pocketflow_logged_in_user');
+                        localStorage.removeItem('pocketflow_remember_token');
+                    }
                     await loadCloudData();
                     updateUserProfileUI();
                     renderLoginAccountSettingUI();
@@ -1454,6 +1459,7 @@
         // 登出
         function handleLogout() {
             localStorage.removeItem('pocketflow_logged_in_user');
+            localStorage.removeItem('pocketflow_remember_token');
             sessionStorage.removeItem('pocketflow_session_token');
             cloudSessionToken = '';
             cloudAccountUsername = '';
@@ -1628,6 +1634,36 @@
             localStorage.setItem('pocketflow_data_owner', cloudAccountUsername);
         }
 
+        async function restoreRememberedSession() {
+            const rememberedUser = localStorage.getItem('pocketflow_logged_in_user');
+            const rememberedToken = localStorage.getItem('pocketflow_remember_token');
+            if (!rememberedUser || !rememberedToken) return;
+
+            cloudAccountUsername = rememberedUser;
+            currentUsername = rememberedUser;
+            cloudSessionToken = rememberedToken;
+            mayMigrateLocalData = false;
+            sessionStorage.setItem('pocketflow_session_token', cloudSessionToken);
+
+            try {
+                await loadCloudData();
+                const overlay = document.getElementById('login-overlay');
+                overlay.classList.add('login-fade-out');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    overlay.classList.remove('login-fade-out');
+                }, 350);
+                renderLoginAccountSettingUI();
+            } catch (error) {
+                // token 過期或被登出時，保留帳號預填，但要求使用者重新登入。
+                localStorage.removeItem('pocketflow_remember_token');
+                sessionStorage.removeItem('pocketflow_session_token');
+                cloudSessionToken = '';
+                cloudAccountUsername = '';
+                cloudDataLoaded = false;
+            }
+        }
+
         function scheduleCloudSync(delay = 700) {
             if (!cloudSessionToken || !cloudDataLoaded || applyingCloudData) return;
             if (cloudSyncInProgress) {
@@ -1708,6 +1744,8 @@
             updateAIAdvice();
             renderBudgets();
             renderAnalytics();
+
+            restoreRememberedSession();
 
             // Click outside notification listener
             window.addEventListener('click', (e) => {
